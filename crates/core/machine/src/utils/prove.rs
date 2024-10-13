@@ -38,6 +38,7 @@ use sp1_stark::{
     StarkGenericConfig, StarkMachine, StarkProvingKey, StarkVerifyingKey, UniConfig, Val,
     VerifierConstraintFolder,
 };
+use serde_json::to_string;
 
 #[derive(Error, Debug)]
 pub enum SP1CoreProverError {
@@ -350,6 +351,7 @@ where
                             .map(|(record, traces)| {
                                 let _span = span.enter();
                                 let data = prover.commit(record, traces);
+                                println!("hehe1, main_commit={:?}, public_values={:?}", to_string(&data.main_commit), &data.public_values);
                                 let main_commit = data.main_commit.clone();
                                 drop(data);
                                 main_commit
@@ -517,6 +519,7 @@ where
                                 |(record, traces)| {
                                     let _span = span.enter();
                                     let data = prover.commit(record, traces);
+                                    println!("hehe2, main_commit={:?}, public_values={:?}", to_string(&data.main_commit), &data.public_values);
                                     prover.open(pk, data, &mut challenger.clone()).unwrap()
                                 },
                             ),

@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'fibonacci'",
+            "program": "/Users/chao/opensource/zkvm/sp1/examples/target/release-with-debug/fibonacci-script",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
