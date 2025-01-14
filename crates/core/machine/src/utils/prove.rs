@@ -369,6 +369,7 @@ where
                                 let _span = span.enter();
 
                                 let main_data = prover.commit(&record, main_traces);
+                                println!("hehe1, record_stats={:?}", record.stats());
 
                                 let opening_span = tracing::debug_span!("opening").entered();
                                 let proof =

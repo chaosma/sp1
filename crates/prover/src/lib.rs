@@ -367,6 +367,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
 
             // Collect the shard proofs and the public values stream.
             let shard_proofs: Vec<ShardProof<_>> = proof_rx.iter().collect();
+            println!("hehe1, num_shards={}", shard_proofs.len());
             let (public_values_stream, cycles) = handle.join().unwrap().unwrap();
             let public_values = SP1PublicValues::from(&public_values_stream);
             Self::check_for_high_cycles(cycles);

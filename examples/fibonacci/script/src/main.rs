@@ -1,4 +1,11 @@
+use clap::Parser;
 use sp1_sdk::{include_elf, utils, ProverClient, SP1ProofWithPublicValues, SP1Stdin};
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(long, default_value_t = 1000)]
+    n: u32,
+}
 
 /// The ELF we want to execute inside the zkVM.
 const ELF: &[u8] = include_elf!("fibonacci-program");
@@ -7,8 +14,11 @@ fn main() {
     // Setup logging.
     utils::setup_logger();
 
+    let args = Args::parse();
+
     // Create an input stream and write '500' to it.
-    let n = 1000u32;
+    let n = args.n;
+    println!("hehe, input n={}", n);
 
     // The input stream that the program will read from using `sp1_zkvm::io::read`. Note that the
     // types of the elements in the input stream must match the types being read in the program.
