@@ -10,6 +10,12 @@ struct Args {
     /// Whether or not to generate a proof.
     #[arg(long, default_value_t = false)]
     prove: bool,
+    #[arg(long, default_value_t = false)]
+    compress: bool,
+    #[arg(long, default_value_t = false)]
+    plonk: bool,
+    #[arg(long, default_value_t = false)]
+    groth16: bool,
 }
 
 fn load_input_from_cache(chain_id: u64, block_number: u64) -> ClientExecutorInput {
@@ -28,7 +34,7 @@ fn main() {
     let args = Args::parse();
 
     // Load the input from the cache.
-    let client_input = load_input_from_cache(CHAIN_ID_ETH_MAINNET, 20526624);
+    let client_input = load_input_from_cache(CHAIN_ID_ETH_MAINNET, 21472400);
 
     // Generate the proof.
     let client = ProverClient::new();
@@ -56,10 +62,30 @@ fn main() {
     // If the `prove` argument was passed in, actually generate the proof.
     // It is strongly recommended you use the network prover given the size of these programs.
     if args.prove {
-        println!("Starting proof generation.");
+        println!("Starting shard proof generation.");
         let proof = client.prove(&pk, stdin).run().expect("Proving should work.");
         println!("Proof generation finished.");
 
         client.verify(&proof, &vk).expect("proof verification should succeed");
+    } else if args.compress {
+        println!("Starting compress proof generation.");
+        let proof = client.prove(&pk, stdin).compressed().run().expect("Proving should work.");
+        println!("Proof generation finished.");
+
+        client.verify(&proof, &vk).expect("proof verification should succeed");
+    } else if args.plonk {
+        println!("Starting plonk proof generation.");
+        let proof = client.prove(&pk, stdin).plonk().run().expect("Proving should work.");
+        println!("Proof generation finished.");
+
+        client.verify(&proof, &vk).expect("proof verification should succeed");
+    } else if args.groth16 {
+        println!("Starting groth16 proof generation.");
+        let proof = client.prove(&pk, stdin).groth16().run().expect("Proving should work.");
+        println!("Proof generation finished.");
+
+        client.verify(&proof, &vk).expect("proof verification should succeed");
+    } else {
+        panic!("not supported");
     }
 }
