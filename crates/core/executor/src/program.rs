@@ -62,6 +62,8 @@ impl Program {
         // Transpile the RV32IM instructions.
         let instructions = transpile(&elf.instructions);
 
+        println!("hehe, num_instructions={}", instructions.len());
+
         // Return the program.
         Ok(Program {
             instructions,

@@ -90,6 +90,10 @@ impl Default for SP1CoreOpts {
         let default_shard_size = shard_size(total_available_mem);
         let default_shard_batch_size = shard_batch_size(total_available_mem);
 
+        println!("hehe, env_shard_size={:?}", env::var("SHARD_SIZE"));
+        println!("hehe, env_shard_batch_size={:?}", env::var("SHARD_BATCH_SIZE"));
+        println!("hehe, env_trace_gen_workers={:?}", env::var("TRACE_GEN_WORKERS"));
+
         Self {
             shard_size: env::var("SHARD_SIZE").map_or_else(
                 |_| default_shard_size,

@@ -71,6 +71,7 @@ where
 
     let _: Vec<_> = shape_rx.iter().collect();
     let shard_proofs: Vec<ShardProof<SC>> = proof_rx.iter().collect();
+    println!("hehe, num_shard_proofs={}", shard_proofs.len());
     let proof = MachineProof { shard_proofs };
 
     Ok((proof, public_values, cycles))
