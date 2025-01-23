@@ -5921,6 +5921,7 @@ dependencies = [
  "itertools 0.13.0",
  "lru",
  "num-bigint 0.4.6",
+ "p3-air",
  "p3-baby-bear",
  "p3-bn254-fr",
  "p3-challenger",

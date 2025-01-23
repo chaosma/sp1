@@ -92,7 +92,6 @@ impl Default for SP1CoreOpts {
 
         println!("hehe, env_shard_size={:?}", env::var("SHARD_SIZE"));
         println!("hehe, env_shard_batch_size={:?}", env::var("SHARD_BATCH_SIZE"));
-        println!("hehe, env_trace_gen_workers={:?}", env::var("TRACE_GEN_WORKERS"));
 
         Self {
             shard_size: env::var("SHARD_SIZE").map_or_else(

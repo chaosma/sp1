@@ -175,6 +175,11 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
     pub fn uninitialized() -> Self {
         // Initialize the provers.
         let core_machine = RiscvAir::machine(CoreSC::default());
+        use p3_air::BaseAir;
+        use sp1_stark::air::MachineAir;
+        core_machine.chips().iter().for_each(|chip| {
+            println!("hehe, chip={}, width={}", chip.name(), chip.width());
+        });
         let core_prover = C::CoreProver::new(core_machine);
 
         let compress_machine = CompressAir::compress_machine(InnerSC::default());
@@ -367,6 +372,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
 
             // Collect the shard proofs and the public values stream.
             let shard_proofs: Vec<ShardProof<_>> = proof_rx.iter().collect();
+            println!("hehe1, num_shards={}", shard_proofs.len());
             let (public_values_stream, cycles) = handle.join().unwrap().unwrap();
             let public_values = SP1PublicValues::from(&public_values_stream);
             Self::check_for_high_cycles(cycles);

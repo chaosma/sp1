@@ -1,0 +1,840 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'fibonacci'",
+            "program": "/Users/chao/opensource/sp1/sp1/examples/target/release-with-debug/fibonacci-script",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_build'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-build"
+                ],
+                "filter": {
+                    "name": "sp1_build",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_cli'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-cli"
+                ],
+                "filter": {
+                    "name": "sp1_cli",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'cargo-prove'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=cargo-prove",
+                    "--package=sp1-cli"
+                ],
+                "filter": {
+                    "name": "cargo-prove",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'cargo-prove'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=cargo-prove",
+                    "--package=sp1-cli"
+                ],
+                "filter": {
+                    "name": "cargo-prove",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_core_machine'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-core-machine"
+                ],
+                "filter": {
+                    "name": "sp1_core_machine",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_core_executor'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-core-executor"
+                ],
+                "filter": {
+                    "name": "sp1_core_executor",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_curves'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-curves"
+                ],
+                "filter": {
+                    "name": "sp1_curves",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_primitives'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-primitives"
+                ],
+                "filter": {
+                    "name": "sp1_primitives",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_stark'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-stark"
+                ],
+                "filter": {
+                    "name": "sp1_stark",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_zkvm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-zkvm"
+                ],
+                "filter": {
+                    "name": "sp1_zkvm",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_lib'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-lib"
+                ],
+                "filter": {
+                    "name": "sp1_lib",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'test_artifacts'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=test-artifacts"
+                ],
+                "filter": {
+                    "name": "test_artifacts",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_sdk'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-sdk"
+                ],
+                "filter": {
+                    "name": "sp1_sdk",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_cuda'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-cuda"
+                ],
+                "filter": {
+                    "name": "sp1_cuda",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_prover'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "sp1_prover",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'build_compress_vks'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=build_compress_vks",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "build_compress_vks",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'build_compress_vks'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=build_compress_vks",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "build_compress_vks",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'build_groth16_bn254'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=build_groth16_bn254",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "build_groth16_bn254",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'build_groth16_bn254'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=build_groth16_bn254",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "build_groth16_bn254",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'build_plonk_bn254'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=build_plonk_bn254",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "build_plonk_bn254",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'build_plonk_bn254'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=build_plonk_bn254",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "build_plonk_bn254",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'fibonacci_groth16'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=fibonacci_groth16",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "fibonacci_groth16",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'fibonacci_groth16'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=fibonacci_groth16",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "fibonacci_groth16",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'fibonacci_sweep'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=fibonacci_sweep",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "fibonacci_sweep",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'fibonacci_sweep'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=fibonacci_sweep",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "fibonacci_sweep",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'find_minimal_large_recursion_shape'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=find_minimal_large_recursion_shape",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "find_minimal_large_recursion_shape",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'find_minimal_large_recursion_shape'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=find_minimal_large_recursion_shape",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "find_minimal_large_recursion_shape",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'post_trusted_setup'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=post_trusted_setup",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "post_trusted_setup",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'post_trusted_setup'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=post_trusted_setup",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "post_trusted_setup",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'tendermint_sweep'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=tendermint_sweep",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "tendermint_sweep",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'tendermint_sweep'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=tendermint_sweep",
+                    "--package=sp1-prover"
+                ],
+                "filter": {
+                    "name": "tendermint_sweep",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_recursion_circuit'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-recursion-circuit"
+                ],
+                "filter": {
+                    "name": "sp1_recursion_circuit",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_recursion_compiler'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-recursion-compiler"
+                ],
+                "filter": {
+                    "name": "sp1_recursion_compiler",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_recursion_core'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-recursion-core"
+                ],
+                "filter": {
+                    "name": "sp1_recursion_core",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_recursion_gnark_ffi'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-recursion-gnark-ffi"
+                ],
+                "filter": {
+                    "name": "sp1_recursion_gnark_ffi",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_eval'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-eval"
+                ],
+                "filter": {
+                    "name": "sp1_eval",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'sp1-eval'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=sp1-eval",
+                    "--package=sp1-eval"
+                ],
+                "filter": {
+                    "name": "sp1-eval",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'sp1-eval'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=sp1-eval",
+                    "--package=sp1-eval"
+                ],
+                "filter": {
+                    "name": "sp1-eval",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_helper'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-helper"
+                ],
+                "filter": {
+                    "name": "sp1_helper",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'sp1-perf'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=sp1-perf",
+                    "--package=sp1-perf"
+                ],
+                "filter": {
+                    "name": "sp1-perf",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'sp1-perf'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=sp1-perf",
+                    "--package=sp1-perf"
+                ],
+                "filter": {
+                    "name": "sp1-perf",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'sp1-recursion-gnark-cli'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=sp1-recursion-gnark-cli",
+                    "--package=sp1-recursion-gnark-cli"
+                ],
+                "filter": {
+                    "name": "sp1-recursion-gnark-cli",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'sp1-recursion-gnark-cli'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=sp1-recursion-gnark-cli",
+                    "--package=sp1-recursion-gnark-cli"
+                ],
+                "filter": {
+                    "name": "sp1-recursion-gnark-cli",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'sp1_verifier'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=sp1-verifier"
+                ],
+                "filter": {
+                    "name": "sp1_verifier",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
