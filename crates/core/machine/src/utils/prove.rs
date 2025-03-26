@@ -463,6 +463,8 @@ where
                                     prover.open(pk, main_data, &mut challenger.clone()).unwrap()
                                 });
 
+                                println!("hehe0, shard={}, record_stats={:?}", shard, record.stats());
+
                                 let elapsed = before.elapsed();
 
                                 // Log the shard heights/shape as well as how long it took to prove.
