@@ -13,7 +13,7 @@ const GROTH16_ELF: &[u8] = include_elf!("groth16-verifier-program");
 const FIBONACCI_ELF: &[u8] = include_elf!("fibonacci-program");
 
 const PROOF_DIR: &str = "proofs";
-const NUM_PROOFS: usize = 5;
+const NUM_PROOFS: usize = 10;
 
 fn save_proof_set(
     index: usize,
@@ -64,14 +64,6 @@ fn load_proof_set(path: &str) -> std::io::Result<(Vec<u8>, Vec<u8>, String)> {
     Ok((proof, pub_inputs, vk))
 }
 
-fn generate_and_save_proofs(count: usize) {
-    utils::setup_logger();
-    for i in 0..count {
-        let (proof, public_inputs, vk) = generate_fibonacci_proof();
-        save_proof_set(i, proof, public_inputs, vk).expect("Failed to save proof set");
-    }
-}
-
 /// Generates the proof, public values, and vkey hash for the Fibonacci program in a format that
 /// can be read by `sp1-verifier`.
 ///
@@ -98,27 +90,42 @@ fn generate_fibonacci_proof() -> (Vec<u8>, Vec<u8>, String) {
 fn main() {
     utils::setup_logger();
 
-    // === Phase 1: Generate and save proofs ===
-    for i in 0..NUM_PROOFS {
-        let (proof, public_inputs, vk) = generate_fibonacci_proof();
-        save_proof_set(i, proof, public_inputs, vk).expect("Failed to save proof set");
-        println!("[+] Saved proof set {}", i);
-    }
-
-    // === Phase 2: Load and verify saved proofs ===
+// === Phase 1: Generate and save proofs ===
+//    for i in 0..NUM_PROOFS {
+//        let (proof, public_inputs, vk) = generate_fibonacci_proof();
+//        save_proof_set(i, proof, public_inputs, vk).expect("Failed to save proof set");
+//        println!("[+] Saved proof set {}", i);
+//    }
+//
     let client = ProverClient::from_env();
 
-    for i in 0..NUM_PROOFS {
-        let (proof, public_inputs, vk) = load_proof_set(&format!("{}/proof_{}.bin", PROOF_DIR, i))
-            .expect("Failed to load proof set");
+    let mut stdin = SP1Stdin::new();
+    stdin.write(&(NUM_PROOFS as u32));
 
-        let mut stdin = SP1Stdin::new();
+    let (proof, public_inputs, vk) = load_proof_set(&format!("{}/proof_{}.bin", PROOF_DIR, 0))
+        .expect("Failed to load proof set");
+    // only write vk once
+    stdin.write(&vk);
+    stdin.write_vec(proof);
+    stdin.write_vec(public_inputs);
+
+    for i in 1..NUM_PROOFS  {
+        let (proof, public_inputs, _) = load_proof_set(&format!("{}/proof_{}.bin", PROOF_DIR, i))
+            .expect("Failed to load proof set");
         stdin.write_vec(proof);
         stdin.write_vec(public_inputs);
-        stdin.write(&vk);
-
-        let (_, report) = client.execute(GROTH16_ELF, &stdin).run().unwrap();
-        println!("[✓] Verified proof {} with {} cycles", i, report.total_instruction_count());
-        println!("report {} is {}", i, report);
     }
+
+    let start = std::time::Instant::now();
+    // let (_, report) = client.execute(GROTH16_ELF, &stdin).run().unwrap();
+    let (pk, _) = client.setup(GROTH16_ELF);
+    let proof = client.prove(&pk, &stdin).groth16().run().unwrap();
+    let duration = start.elapsed();
+
+    println!(
+        "[✓] verify batch of {} proofs in {:.3?}",
+        NUM_PROOFS,
+        duration,
+    );
 }
+
