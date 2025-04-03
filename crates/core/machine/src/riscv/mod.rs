@@ -863,4 +863,22 @@ pub mod tests {
         }
         assert_eq!(vk.chip_ordering, deserialized_vk.chip_ordering);
     }
+    #[test]
+    fn col_counts() {
+        use p3_air::BaseAir;
+        let mut chips = RiscvAir::<BabyBear>::chips();
+        chips.sort_by_key(|chip| chip.width());
+
+        println!("chip                      | main | perm | prep | quot");
+        println!("-----------------------------------------------------");
+
+        for chip in chips {
+            let name = chip.name();
+            let main = chip.width();
+            let perm = chip.permutation_width();
+            let prep = chip.preprocessed_width();
+            let quot = chip.quotient_width();
+            println!("{:25} | {:4} | {:4} | {:4} | {:4}", name, main, perm, prep, quot);
+        }
+    }
 }
