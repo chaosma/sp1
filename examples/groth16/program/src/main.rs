@@ -3,7 +3,14 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
+use sha2::{Digest, Sha256};
 use sp1_verifier::Groth16Verifier;
+
+pub fn hash(input: &[u8]) -> Vec<u8> {
+    let mut hasher = Sha256::new();
+    hasher.update(input);
+    hasher.finalize().to_vec()
+}
 
 pub fn main() {
     // Read the number of proofs to verify
@@ -19,7 +26,8 @@ pub fn main() {
         let sp1_public_values = sp1_zkvm::io::read_vec();
 
         println!("cycle-tracker-start: verify {}", i);
-        let result = Groth16Verifier::verify(&proof, &sp1_public_values, &sp1_vkey_hash, groth16_vk);
+        let result =
+            Groth16Verifier::verify(&proof, &sp1_public_values, &sp1_vkey_hash, groth16_vk);
         println!("cycle-tracker-end: verify {}", i);
 
         match result {

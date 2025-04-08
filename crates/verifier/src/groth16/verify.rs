@@ -69,3 +69,26 @@ pub(crate) fn verify_groth16_algebraic(
         Err(Groth16Error::ProofVerificationFailed)
     }
 }
+
+pub(crate) fn batch_verify_groth16_algebraic(
+    vk: &Groth16VerifyingKey,
+    proofs: &[Groth16Proof],
+    public_inputs: &[&[Fr]],
+) -> Result<(), Groth16Error> {
+    /*
+    let prepared_inputs = prepare_inputs(vk.clone(), public_inputs)?;
+
+    if pairing_batch(&[
+        (-Into::<G1>::into(proof.ar), proof.bs.into()),
+        (prepared_inputs, vk.g2.gamma.into()),
+        (proof.krs.into(), vk.g2.delta.into()),
+        (vk.g1.alpha.into(), -Into::<G2>::into(vk.g2.beta)),
+    ]) == Gt::one()
+    {
+        Ok(())
+    } else {
+        Err(Groth16Error::ProofVerificationFailed)
+    }
+    */
+    todo!()
+}
