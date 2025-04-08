@@ -71,9 +71,9 @@ pub(crate) fn verify_groth16_algebraic(
 }
 
 pub(crate) fn batch_verify_groth16_algebraic(
-    vk: &Groth16VerifyingKey,
-    proofs: &[Groth16Proof],
-    public_inputs: &[&[Fr]],
+    _vk: &Groth16VerifyingKey,
+    _proofs: &[Groth16Proof],
+    _public_inputs: &[&[Fr]],
 ) -> Result<(), Groth16Error> {
     /*
     let prepared_inputs = prepare_inputs(vk.clone(), public_inputs)?;
