@@ -58,11 +58,12 @@ pub trait MachineProver<SC: StarkGenericConfig, A: MachineAir<SC::Val>>:
 
     /// Generate the main traces.
     fn generate_traces(&self, record: &A::Record) -> Vec<(String, RowMajorMatrix<Val<SC>>)> {
+        let start = Instant::now();
         let shard_chips = self.shard_chips(record).collect::<Vec<_>>();
 
         // For each chip, generate the trace.
         let parent_span = tracing::debug_span!("generate traces for shard");
-        parent_span.in_scope(|| {
+        let result = parent_span.in_scope(|| {
             shard_chips
                 .par_iter()
                 .map(|chip| {
@@ -71,14 +72,24 @@ pub trait MachineProver<SC: StarkGenericConfig, A: MachineAir<SC::Val>>:
                     let trace = chip.generate_trace(record, &mut A::Record::default());
                     tracing::debug!(
                         parent: &parent_span,
-                        "generated trace for chip {} in {:?}",
+                        "hehe3, generated trace for chip {} in {:?}, with width={}, pre_fit_height={}",
                         chip_name,
-                        begin.elapsed()
+                        begin.elapsed(),
+                        trace.width,
+                        trace.values.len() / trace.width,
                     );
                     (chip_name, trace)
                 })
                 .collect::<Vec<_>>()
-        })
+        });
+        let duration = start.elapsed();
+        println!(
+            "hehe2 Time elapsed: {}.{:03} seconds",
+            duration.as_secs(),
+            duration.subsec_millis()
+        );
+        
+        result
     }
 
     /// Commit to the main traces.

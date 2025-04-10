@@ -18,6 +18,7 @@ pub mod types;
 pub mod utils;
 pub mod verify;
 
+use std::time::Instant;
 use std::{
     borrow::Borrow,
     collections::BTreeMap,
@@ -440,6 +441,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             let record_and_trace_tx = Arc::new(Mutex::new(record_and_trace_tx));
             let record_and_trace_rx = Arc::new(Mutex::new(record_and_trace_rx));
             let input_rx = Arc::new(Mutex::new(input_rx));
+            let start = Instant::now();
             for _ in 0..opts.recursion_opts.trace_gen_workers {
                 let record_and_trace_sync = Arc::clone(&record_and_trace_sync);
                 let record_and_trace_tx = Arc::clone(&record_and_trace_tx);
@@ -554,6 +556,13 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                     }
                 });
             }
+            let duration = start.elapsed();
+            println!(
+                "hehe1 Time elapsed: {}.{:03} seconds",
+                duration.as_secs(),
+                duration.subsec_millis()
+            );
+            
 
             // Spawn workers who generate the compress proofs.
             let proofs_sync = Arc::new(TurnBasedSync::new());
