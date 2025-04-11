@@ -361,7 +361,7 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
 impl<F: PrimeField32> Default for CoreShapeConfig<F> {
     fn default() -> Self {
         // Preprocessed chip heights.
-        let program_heights = vec![Some(19), Some(20), Some(21), Some(22)];
+        let program_heights = vec![Some(19), Some(20), Some(21), Some(22), Some(23)];
         // let program_memory_heights = vec![Some(19), Some(20), Some(21), Some(22)];
 
         let allowed_preprocessed_log_heights = HashMap::from([
@@ -704,6 +704,34 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
                 divrem_height: vec![Some(10), Some(16)],
                 is_potentially_maximal: true,
             },
+            // chao: add larger size
+            // not sure if optimal combination
+            CoreShapeSpec {
+                cpu_height: vec![Some(22)],
+                add_sub_height: vec![Some(22)],
+                lt_height: vec![Some(20), Some(21)],
+                bitwise_height: vec![Some(17), Some(18), Some(19)],
+                shift_right_height: vec![Some(17), Some(18), Some(19)],
+                shift_left_height: vec![Some(17), Some(18), Some(19)],
+                syscall_core_height: vec![Some(16), Some(17)],
+                memory_local_height: vec![Some(16), Some(17)],
+                mul_height: vec![Some(19), Some(20), Some(21)],
+                divrem_height: vec![Some(10), Some(16)],
+                is_potentially_maximal: true,
+            },
+            CoreShapeSpec {
+                cpu_height: vec![Some(23)],
+                add_sub_height: vec![Some(22), Some(23)],
+                lt_height: vec![Some(20), Some(21), Some(22)],
+                bitwise_height: vec![Some(17), Some(18), Some(19)],
+                shift_right_height: vec![Some(17), Some(18), Some(19)],
+                shift_left_height: vec![Some(17), Some(18), Some(19)],
+                syscall_core_height: vec![Some(16), Some(17)],
+                memory_local_height: vec![Some(16), Some(17)],
+                mul_height: vec![Some(19), Some(20), Some(21)],
+                divrem_height: vec![Some(10), Some(16)],
+                is_potentially_maximal: true,
+            },
         ];
 
         let mut allowed_core_log_heights = vec![];
@@ -726,10 +754,28 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
         }
 
         // Set the memory init and finalize heights.
-        let memory_init_heights =
-            vec![None, Some(10), Some(16), Some(18), Some(19), Some(20), Some(21)];
-        let memory_finalize_heights =
-            vec![None, Some(10), Some(16), Some(18), Some(19), Some(20), Some(21)];
+        let memory_init_heights = vec![
+            None,
+            Some(10),
+            Some(16),
+            Some(18),
+            Some(19),
+            Some(20),
+            Some(21),
+            Some(22),
+            Some(23),
+        ];
+        let memory_finalize_heights = vec![
+            None,
+            Some(10),
+            Some(16),
+            Some(18),
+            Some(19),
+            Some(20),
+            Some(21),
+            Some(22),
+            Some(23),
+        ];
         let memory_allowed_log_heights = HashMap::from([
             (RiscvAir::MemoryGlobalInit(MemoryGlobalChip::new(Initialize)), memory_init_heights),
             (RiscvAir::MemoryGlobalFinal(MemoryGlobalChip::new(Finalize)), memory_finalize_heights),
@@ -879,6 +925,44 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
                     vec![Some(19)],
                 ),
                 (RiscvAir::<F>::MemoryGlobalFinal(MemoryGlobalChip::new(Finalize)), vec![Some(19)]),
+            ]),
+            // chao: add larger shapes
+            HashMap::from([
+                (RiscvAir::<F>::Cpu(CpuChip::default()), vec![Some(22)]),
+                (RiscvAir::<F>::Add(AddSubChip::default()), vec![Some(22)]),
+                (RiscvAir::<F>::Bitwise(BitwiseChip::default()), vec![Some(19)]),
+                (RiscvAir::<F>::Mul(MulChip::default()), vec![Some(19)]),
+                (RiscvAir::<F>::ShiftRight(ShiftRightChip::default()), vec![Some(19)]),
+                (RiscvAir::<F>::ShiftLeft(ShiftLeft::default()), vec![Some(19)]),
+                (RiscvAir::<F>::Lt(LtChip::default()), vec![Some(21)]),
+                (RiscvAir::<F>::MemoryLocal(MemoryLocalChip::new()), vec![Some(19)]),
+                (RiscvAir::<F>::SyscallCore(SyscallChip::core()), vec![Some(19)]),
+                (RiscvAir::<F>::DivRem(DivRemChip::default()), vec![Some(21)]),
+                (
+                    RiscvAir::<F>::MemoryGlobalInit(MemoryGlobalChip::new(Initialize)),
+                    vec![Some(20)],
+                ),
+                (RiscvAir::<F>::MemoryGlobalFinal(MemoryGlobalChip::new(Finalize)), vec![Some(20)]),
+            ]),
+            HashMap::from([
+                (RiscvAir::<F>::Cpu(CpuChip::default()), vec![Some(23)]),
+                (RiscvAir::<F>::Add(AddSubChip::default()), vec![Some(22), Some(23)]),
+                (RiscvAir::<F>::Bitwise(BitwiseChip::default()), vec![Some(19)]),
+                (RiscvAir::<F>::Mul(MulChip::default()), vec![Some(19)]),
+                (RiscvAir::<F>::ShiftRight(ShiftRightChip::default()), vec![Some(19)]),
+                (RiscvAir::<F>::ShiftLeft(ShiftLeft::default()), vec![Some(19)]),
+                (RiscvAir::<F>::Lt(LtChip::default()), vec![Some(21), Some(22)]),
+                (RiscvAir::<F>::MemoryLocal(MemoryLocalChip::new()), vec![Some(20), Some(21)]),
+                (RiscvAir::<F>::SyscallCore(SyscallChip::core()), vec![Some(19)]),
+                (RiscvAir::<F>::DivRem(DivRemChip::default()), vec![Some(21)]),
+                (
+                    RiscvAir::<F>::MemoryGlobalInit(MemoryGlobalChip::new(Initialize)),
+                    vec![Some(21), Some(22), Some(23)],
+                ),
+                (
+                    RiscvAir::<F>::MemoryGlobalFinal(MemoryGlobalChip::new(Finalize)),
+                    vec![Some(21), Some(22), Some(23)],
+                ),
             ]),
         ];
 
