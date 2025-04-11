@@ -89,6 +89,11 @@ impl Default for SP1CoreOpts {
         let total_available_mem = sys.total_memory() / (1024 * 1024 * 1024);
         let default_shard_size = shard_size(total_available_mem);
         let default_shard_batch_size = shard_batch_size(total_available_mem);
+        println!(
+            "hehe0, env_shard_size={:?}, default_shard_size={}",
+            env::var("SHARD_SIZE"),
+            default_shard_size
+        );
 
         Self {
             shard_size: env::var("SHARD_SIZE").map_or_else(
