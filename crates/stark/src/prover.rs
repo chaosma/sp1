@@ -88,7 +88,6 @@ pub trait MachineProver<SC: StarkGenericConfig, A: MachineAir<SC::Val>>:
             duration.as_secs(),
             duration.subsec_millis()
         );
-        
         result
     }
 
