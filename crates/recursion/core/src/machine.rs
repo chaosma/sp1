@@ -380,4 +380,28 @@ pub mod tests {
 
         test_recursion_linear_program(instructions);
     }
+
+    #[test]
+    fn col_counts() {
+        use p3_air::BaseAir;
+        use p3_baby_bear::BabyBear;
+        use sp1_stark::air::MachineAir;
+
+        let compress_machine =
+            RecursionAir::<BabyBear, 3>::compress_machine(BabyBearPoseidon2::default());
+        let mut chips = compress_machine.chips().iter().collect::<Vec<_>>();
+        chips.sort_by_key(|chip| chip.name());
+
+        println!("chip                      | main | perm | prep | quot");
+        println!("-----------------------------------------------------");
+
+        for chip in chips {
+            let name = chip.name();
+            let main = chip.width();
+            let perm = chip.permutation_width();
+            let prep = chip.preprocessed_width();
+            let quot = chip.quotient_width();
+            println!("{:25} | {:4} | {:4} | {:4} | {:4}", name, main, perm, prep, quot);
+        }
+    }
 }

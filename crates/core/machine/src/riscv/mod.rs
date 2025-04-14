@@ -863,9 +863,13 @@ pub mod tests {
         }
         assert_eq!(vk.chip_ordering, deserialized_vk.chip_ordering);
     }
+
     #[test]
     fn col_counts() {
         use p3_air::BaseAir;
+        use p3_baby_bear::BabyBear;
+        use sp1_stark::air::MachineAir;
+
         let mut chips = RiscvAir::<BabyBear>::chips();
         chips.sort_by_key(|chip| chip.width());
 
