@@ -868,21 +868,33 @@ pub mod tests {
     fn col_counts() {
         use p3_air::BaseAir;
         use p3_baby_bear::BabyBear;
+        use p3_uni_stark::get_symbolic_constraints;
         use sp1_stark::air::MachineAir;
 
         let mut chips = RiscvAir::<BabyBear>::chips();
         chips.sort_by_key(|chip| chip.width());
 
-        println!("chip                      | main | perm | prep | quot");
-        println!("-----------------------------------------------------");
+        println!("chip                      | main | perm | prep | quot | constraints ");
+        println!("--------------------------------------------------------------------");
 
+        // copied from crates/stark/src/types.rs
+        let proof_max_num_pvs: usize = 231;
         for chip in chips {
             let name = chip.name();
             let main = chip.width();
             let perm = chip.permutation_width();
             let prep = chip.preprocessed_width();
             let quot = chip.quotient_width();
-            println!("{:25} | {:4} | {:4} | {:4} | {:4}", name, main, perm, prep, quot);
+            let constraints = get_symbolic_constraints(&chip.air, prep, proof_max_num_pvs);
+            println!(
+                "{:25} | {:4} | {:4} | {:4} | {:4} | {:11} ",
+                name,
+                main,
+                perm,
+                prep,
+                quot,
+                constraints.len(),
+            );
         }
     }
 }

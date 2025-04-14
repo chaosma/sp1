@@ -53,6 +53,7 @@ cfg-if = "1.0.0"
 
 [dev-dependencies]
 range-set-blaze = { version = "0.1.16" }
+p3-uni-stark = {workspace = true }
 smallvec = { version = "1.13.2", features = [
     "const_generics",
     "const_new",
