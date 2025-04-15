@@ -37,7 +37,8 @@ impl SP1ProverOpts {
             33..49 => (20, 1, 2),
             49..65 => (21, 1, 3),
             65..81 => (21, 3, 1),
-            81.. => (21, 4, 1),
+            81..120 => (21, 4, 1),
+            120.. => (22, 4, 1),
         }
     }
 
@@ -47,6 +48,10 @@ impl SP1ProverOpts {
     #[must_use]
     pub fn cpu(cpu_ram_gb: usize) -> Self {
         let (log2_shard_size, shard_batch_size, log2_divisor) = Self::get_memory_opts(cpu_ram_gb);
+        println!(
+            "hehe0, log2_shard_size={}, shard_batch_size={}, log2_divisor={}",
+            log2_shard_size, shard_batch_size, log2_divisor
+        );
 
         let mut opts = SP1ProverOpts::default();
         opts.core_opts.shard_size = 1 << log2_shard_size;
