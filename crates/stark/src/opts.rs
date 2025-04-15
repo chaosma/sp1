@@ -3,7 +3,7 @@ use std::env;
 use serde::{Deserialize, Serialize};
 use sysinfo::System;
 
-const MAX_SHARD_SIZE: usize = 1 << 21;
+const MAX_SHARD_SIZE: usize = 1 << 23;
 const RECURSION_MAX_SHARD_SIZE: usize = 1 << 22;
 const MAX_SHARD_BATCH_SIZE: usize = 8;
 const DEFAULT_TRACE_GEN_WORKERS: usize = 1;
@@ -37,8 +37,7 @@ impl SP1ProverOpts {
             33..49 => (20, 1, 2),
             49..65 => (21, 1, 3),
             65..81 => (21, 3, 1),
-            81..120 => (21, 4, 1),
-            120.. => (22, 4, 1),
+            81.. => (21, 4, 1),
         }
     }
 
@@ -48,11 +47,6 @@ impl SP1ProverOpts {
     #[must_use]
     pub fn cpu(cpu_ram_gb: usize) -> Self {
         let (log2_shard_size, shard_batch_size, log2_divisor) = Self::get_memory_opts(cpu_ram_gb);
-        println!(
-            "hehe0, log2_shard_size={}, shard_batch_size={}, log2_divisor={}",
-            log2_shard_size, shard_batch_size, log2_divisor
-        );
-
         let mut opts = SP1ProverOpts::default();
         opts.core_opts.shard_size = 1 << log2_shard_size;
         opts.core_opts.shard_batch_size = shard_batch_size;
@@ -134,6 +128,7 @@ impl Default for SP1CoreOpts {
         let cpu_ram_gb = System::new_all().total_memory() / (1024 * 1024 * 1024);
         let (default_log2_shard_size, default_shard_batch_size, default_log2_divisor) =
             SP1ProverOpts::get_memory_opts(cpu_ram_gb as usize);
+        println!("hehe0, default_log2_shard_size={}, shard_size={:?}", default_log2_shard_size, env::var("SHARD_SIZE"));
 
         let mut opts = Self {
             shard_size: env::var("SHARD_SIZE").map_or_else(
