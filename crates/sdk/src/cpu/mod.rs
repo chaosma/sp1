@@ -110,6 +110,7 @@ impl CpuProver {
         context: SP1Context<'a>,
         mode: SP1ProofMode,
     ) -> Result<SP1ProofWithPublicValues> {
+        println!("[hehe0] start prove_impl");
         let program = self.prover.get_program(&pk.elf).unwrap();
 
         // If we're in mock mode, return a mock proof.
@@ -117,9 +118,11 @@ impl CpuProver {
             return self.mock_prove_impl(pk, stdin, context, mode);
         }
 
+        println!("[hehe0] start prove_core");
         // Generate the core proof.
         let proof: SP1ProofWithMetadata<SP1CoreProofData> =
             self.prover.prove_core(&pk.pk, program, stdin, opts, context)?;
+        println!("[hehe0] end prove_core");
         if mode == SP1ProofMode::Core {
             return Ok(SP1ProofWithPublicValues {
                 proof: SP1Proof::Core(proof.proof.0),
@@ -132,7 +135,9 @@ impl CpuProver {
         let deferred_proofs =
             stdin.proofs.iter().map(|(reduce_proof, _)| reduce_proof.clone()).collect();
         let public_values = proof.public_values.clone();
+        println!("[hehe0] start prover.compress");
         let reduce_proof = self.prover.compress(&pk.vk, proof, deferred_proofs, opts)?;
+        println!("[hehe0] end prover.compress");
         if mode == SP1ProofMode::Compressed {
             return Ok(SP1ProofWithPublicValues {
                 proof: SP1Proof::Compressed(Box::new(reduce_proof)),
