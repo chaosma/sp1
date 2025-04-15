@@ -44749,5 +44749,45 @@
         "SyscallCore": 9
       }
     }
-  ] 
+  ],
+  "22": [
+    {
+      "inner": {
+        "Cpu": 22,
+        "Global": 20,
+        "Lt": 20,
+        "SyscallInstrs": 13,
+        "Jump": 16,
+        "ShiftLeft": 18,
+        "Bitwise": 18,
+        "ShiftRight": 17,
+        "Mul": 13,
+        "MemoryLocal": 16,
+        "Auipc": 15,
+        "Branch": 18,
+        "AddSub": 21,
+        "MemoryInstrs": 20,
+        "SyscallCore": 15
+      }
+    },
+    {
+      "inner": {
+        "Cpu": 22,
+        "Global": 21,
+        "Lt": 21,
+        "SyscallInstrs": 13,
+        "Jump": 16,
+        "ShiftLeft": 18,
+        "Bitwise": 18,
+        "ShiftRight": 17,
+        "Mul": 13,
+        "MemoryLocal": 17,
+        "Auipc": 15,
+        "Branch": 18,
+        "AddSub": 22,
+        "MemoryInstrs": 20,
+        "SyscallCore": 16
+      }
+    }
+  ]
 }
