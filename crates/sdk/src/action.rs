@@ -4,7 +4,10 @@ use sp1_primitives::io::SP1PublicValues;
 use sp1_prover::{components::DefaultProverComponents, SP1ProvingKey};
 
 use anyhow::{Ok, Result};
+use bincode;
 use sp1_stark::{SP1CoreOpts, SP1ProverOpts};
+use std::fs::File;
+use std::io::Write;
 use std::time::Duration;
 
 use crate::{provers::ProofOpts, Prover, SP1ProofKind, SP1ProofWithPublicValues};
@@ -140,6 +143,47 @@ impl<'a> Prove<'a> {
         }
 
         prover.prove(pk, stdin, proof_opts, context, kind)
+    }
+
+    // generate shard proofs
+    pub fn run_shard_proof(self) -> Result<()> {
+        let Self {
+            prover,
+            kind: _,
+            pk,
+            stdin,
+            mut context_builder,
+            core_opts,
+            recursion_opts,
+            timeout,
+        } = self;
+        let opts = SP1ProverOpts { core_opts, recursion_opts };
+        let proof_opts = ProofOpts { sp1_prover_opts: opts, timeout };
+        let context = context_builder.build();
+
+        let (common_data, proofs) = prover.prove_shard(pk, stdin, proof_opts, context)?;
+
+        let common_serialized = bincode::serialize(&common_data)?;
+        let mut common_file = File::create("common_data.bin")?;
+        common_file.write_all(&common_serialized)?;
+
+        // Save each ShardProof to proof_0.bin, proof_1.bin, etc.
+        for (index, shard_proof) in proofs.iter().enumerate() {
+            let shard_serialized = bincode::serialize(shard_proof)?;
+            let mut shard_file = File::create(format!("proof_{}.bin", index))?;
+            shard_file.write_all(&shard_serialized)?;
+        }
+        Ok(())
+    }
+
+    // generate first layer recursion proof
+    pub fn run_recursion_first_layer(self) {
+        todo!()
+    }
+
+    // combine two recursion proofs into one
+    pub fn run_recursion_two_to_one(self) {
+        todo!()
     }
 
     /// Set the proof kind to the core mode. This is the default.

@@ -19,12 +19,13 @@ use sp1_prover::{
     components::SP1ProverComponents, CoreSC, InnerSC, SP1CoreProofData, SP1Prover, SP1ProvingKey,
     SP1VerifyingKey,
 };
-use sp1_stark::{air::PublicValues, MachineVerificationError, SP1ProverOpts, Word};
+use sp1_stark::{air::PublicValues, MachineVerificationError, SP1ProverOpts, ShardProof, Word};
 use strum_macros::EnumString;
 use thiserror::Error;
 
 use crate::{
-    install::try_install_circuit_artifacts, SP1Proof, SP1ProofKind, SP1ProofWithPublicValues,
+    install::try_install_circuit_artifacts, SP1Proof, SP1ProofCommonData, SP1ProofKind,
+    SP1ProofWithPublicValues,
 };
 
 /// The type of prover.
@@ -83,6 +84,32 @@ pub trait Prover<C: SP1ProverComponents>: Send + Sync {
         kind: SP1ProofKind,
     ) -> Result<SP1ProofWithPublicValues>;
 
+    fn prove_shard<'a>(
+        &'a self,
+        pk: &SP1ProvingKey,
+        stdin: SP1Stdin,
+        opts: ProofOpts,
+        context: SP1Context<'a>,
+    ) -> Result<(SP1ProofCommonData, Vec<ShardProof<CoreSC>>)>;
+
+    //    fn prove_recursion_first_layer<'a>(
+    //        &'a self,
+    //        pk: &SP1ProvingKey,
+    //        stdin: SP1Stdin,
+    //        opts: ProofOpts,
+    //        context: SP1Context<'a>,
+    //        kind: SP1ProofKind,
+    //    ) -> Result<SP1ProofWithPublicValues>;
+    //
+    //    fn prove_recursion_two_to_one<'a>(
+    //        &'a self,
+    //        pk: &SP1ProvingKey,
+    //        stdin: SP1Stdin,
+    //        opts: ProofOpts,
+    //        context: SP1Context<'a>,
+    //        kind: SP1ProofKind,
+    //    ) -> Result<SP1ProofWithPublicValues>;
+    //
     /// Verify that an SP1 proof is valid given its vkey and metadata.
     /// For Plonk proofs, verifies that the public inputs of the PlonkBn254 proof match
     /// the hash of the VK and the committed public values of the SP1ProofWithPublicValues.

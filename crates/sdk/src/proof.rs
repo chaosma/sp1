@@ -31,6 +31,21 @@ pub struct SP1ProofWithPublicValues {
     pub sp1_version: String,
 }
 
+/// store the common data of shard proofs, part of input of recursion prover
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SP1ProofCommonData {
+    pub stdin: SP1Stdin,
+    pub public_values: SP1PublicValues,
+    pub sp1_version: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SP1RecursionProofInput {
+    pub proof: SP1Proof,
+    pub stdin: SP1Stdin,
+    pub public_values: SP1PublicValues,
+}
+
 impl SP1ProofWithPublicValues {
     /// Saves the proof to a path.
     pub fn save(&self, path: impl AsRef<Path>) -> Result<()> {
