@@ -51,20 +51,49 @@ impl Prover<DefaultProverComponents> for CpuProver {
         context: SP1Context<'a>,
         kind: SP1ProofKind,
     ) -> Result<SP1ProofWithPublicValues> {
-        // Generate the core proof.
-        let program = self.prover.get_program(&pk.elf).unwrap();
-        let pk_d = self.prover.core_prover.pk_to_device(&pk.pk);
+        use std::env;
+        let compress_only = env::var("COMPRESS_ONLY")
+            .map(|val| val.to_lowercase() == "true")
+            .unwrap_or(false);
 
-        let proof: sp1_prover::SP1ProofWithMetadata<sp1_prover::SP1CoreProofData> =
-            self.prover.prove_core(&pk_d, program, &stdin, opts.sp1_prover_opts, context)?;
-        if kind == SP1ProofKind::Core {
-            return Ok(SP1ProofWithPublicValues {
-                proof: SP1Proof::Core(proof.proof.0),
-                stdin: proof.stdin,
-                public_values: proof.public_values,
-                sp1_version: self.version().to_string(),
-            });
-        }
+        let proof = if !compress_only {
+            use bincode;
+            use std::fs::File;
+            use std::io::Write;
+
+            // Generate the core proof.
+            let program = self.prover.get_program(&pk.elf).unwrap();
+            let pk_d = self.prover.core_prover.pk_to_device(&pk.pk);
+
+            let proof: sp1_prover::SP1ProofWithMetadata<sp1_prover::SP1CoreProofData> =
+                self.prover.prove_core(&pk_d, program, &stdin, opts.sp1_prover_opts, context)?;
+            let serialized_proof = bincode::serialize(&proof)?;
+            let mut file = File::create("proof.bin")?;
+            file.write_all(&serialized_proof)?;
+
+            if kind == SP1ProofKind::Core {
+                return Ok(SP1ProofWithPublicValues {
+                    proof: SP1Proof::Core(proof.proof.0),
+                    stdin: proof.stdin,
+                    public_values: proof.public_values,
+                    sp1_version: self.version().to_string(),
+                });
+            }
+            proof
+        } else {
+            // load from file
+            use bincode;
+            use std::fs::File;
+            use std::io::Read;
+            println!("load shard proof from file");
+
+            let mut file = File::open("proof.bin")?;
+            let mut serialized_proof = Vec::new();
+            file.read_to_end(&mut serialized_proof)?;
+            let proof: sp1_prover::SP1ProofWithMetadata<sp1_prover::SP1CoreProofData> =
+                bincode::deserialize(&serialized_proof)?;
+            proof
+        };
 
         let deferred_proofs =
             stdin.proofs.iter().map(|(reduce_proof, _)| reduce_proof.clone()).collect();
