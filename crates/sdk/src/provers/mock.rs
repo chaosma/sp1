@@ -2,6 +2,7 @@
 use hashbrown::HashMap;
 use sp1_core_executor::{SP1Context, SP1ReduceProof};
 use sp1_core_machine::io::SP1Stdin;
+use sp1_prover::{InnerSC, RecursionInput, SP1RecursionProverError};
 use sp1_stark::{
     septic_digest::SepticDigest, ShardCommitment, ShardOpenedValues, ShardProof, StarkVerifyingKey,
 };
@@ -154,6 +155,14 @@ impl Prover<DefaultProverComponents> for MockProver {
         _opts: ProofOpts,
         _context: SP1Context<'a>,
     ) -> Result<(SP1ProofCommonData, Vec<ShardProof<CoreSC>>)> {
+        unimplemented!()
+    }
+
+    fn compress<'a>(
+        &'a self,
+        _input: &RecursionInput,
+        _opts: ProofOpts,
+    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
         unimplemented!()
     }
 

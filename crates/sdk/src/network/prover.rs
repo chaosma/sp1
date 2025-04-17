@@ -9,8 +9,9 @@ use crate::{
     SP1ProofWithPublicValues, SP1ProvingKey, SP1VerifyingKey,
 };
 use anyhow::Result;
-use sp1_core_machine::io::SP1Stdin;
-use sp1_prover::{components::DefaultProverComponents, CoreSC, SP1Prover, SP1_CIRCUIT_VERSION};
+use sp1_core_machine::{io::SP1Stdin, reduce::SP1ReduceProof, SP1_CIRCUIT_VERSION};
+use sp1_prover::{components::DefaultProverComponents, CoreSC, SP1Prover};
+use sp1_prover::{InnerSC, RecursionInput, SP1RecursionProverError};
 use sp1_stark::{SP1ProverOpts, ShardProof};
 
 use super::proto::network::GetProofStatusResponse;
@@ -178,6 +179,14 @@ impl Prover<DefaultProverComponents> for NetworkProver {
     ) -> Result<SP1ProofWithPublicValues> {
         warn_if_not_default(&opts.sp1_prover_opts, &context);
         block_on(self.prove(&pk.elf, stdin, kind.into(), opts.timeout))
+    }
+
+    fn compress<'a>(
+        &'a self,
+        _input: &RecursionInput,
+        _opts: ProofOpts,
+    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
+        unimplemented!()
     }
 
     fn prove_shard<'a>(
