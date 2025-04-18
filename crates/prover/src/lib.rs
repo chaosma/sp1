@@ -425,8 +425,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         let traces = self.compress_prover.generate_traces(&records[0]);
 
         // Get the keys.
-        let (pk, vk) = tracing::debug_span!("Setup compress program")
-            .in_scope(|| self.compress_prover.setup(&program));
+        let (pk, vk) = self.compress_prover.setup(&program);
 
         // Observe the proving key.
         let mut challenger = self.compress_prover.config().challenger();

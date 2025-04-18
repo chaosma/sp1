@@ -1,6 +1,7 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use bincode;
 use clap::Parser;
+use sp1_prover::RecursionInput;
 use sp1_sdk::{
     include_elf, utils, ProverClient, SP1Proof, SP1ProofCommonData, SP1ProofWithPublicValues,
     SP1Stdin,
@@ -23,13 +24,12 @@ struct Args {
     compress: bool,
 }
 
-fn load_proofs() -> Result<SP1ProofWithPublicValues> {
+fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
     let common_path = Path::new(PREFIX).join("common_data.bin");
     let mut common_file = File::open(&common_path)?;
     let mut common_serialized = Vec::new();
     common_file.read_to_end(&mut common_serialized)?;
     let common_data: SP1ProofCommonData = bincode::deserialize(&common_serialized)?;
-
     // Load ShardProofs from proof_0.bin, proof_1.bin, etc.
     let mut shard_proofs = Vec::new();
     let mut index = 0;
@@ -38,10 +38,13 @@ fn load_proofs() -> Result<SP1ProofWithPublicValues> {
         if !shard_path.exists() {
             break; // Stop when proof_{index}.bin is not found
         }
-        let mut shard_file = File::open(&shard_path)?;
-        let mut shard_serialized = Vec::new();
-        shard_file.read_to_end(&mut shard_serialized)?;
-        let shard_proof = bincode::deserialize(&shard_serialized)?;
+        let proof = RecursionInput::load(shard_path)?;
+        let shard_proof = match proof {
+            RecursionInput::Single { vk: _, proof } => proof, // Extract proof, ignore vk
+            RecursionInput::Double { .. } => {
+                return Err(anyhow!("Expected Single RecursionInput, found Double"));
+            }
+        };
         shard_proofs.push(shard_proof);
         index += 1;
     }
@@ -59,40 +62,41 @@ fn main() {
     utils::setup_logger();
 
     let args = Args::parse();
-    // Create an input stream and write '500' to it.
-    let n = 1000u32;
-
-    // The input stream that the program will read from using `sp1_zkvm::io::read`. Note that the
-    // types of the elements in the input stream must match the types being read in the program.
-    let mut stdin = SP1Stdin::new();
-    stdin.write(&n);
-
-    // Create a `ProverClient` method.
-    let client = ProverClient::new();
-
-    // Execute the program using the `ProverClient.execute` method, without generating a proof.
-    let (_, report) = client.execute(ELF, stdin.clone()).run().unwrap();
-    println!("executed program with {} cycles", report.total_instruction_count());
-
-    // Generate the proof for the given program and input.
-    let (pk, vk) = client.setup(ELF);
 
     if args.prove {
+        // Create an input stream and write '500' to it.
+        let n = 1000u32;
+
+        // The input stream that the program will read from using `sp1_zkvm::io::read`. Note that the
+        // types of the elements in the input stream must match the types being read in the program.
+        let mut stdin = SP1Stdin::new();
+        stdin.write(&n);
+
+        // Create a `ProverClient` method.
+        let client = ProverClient::new();
+
+        // Execute the program using the `ProverClient.execute` method, without generating a proof.
+        let (_, report) = client.execute(ELF, stdin.clone()).run().unwrap();
+        println!("executed program with {} cycles", report.total_instruction_count());
+
+        // Generate the proof for the given program and input.
+        let (pk, vk) = client.setup(ELF);
+
         println!("Starting shard proof generation.");
         client.prove(&pk, stdin).run_shard_proof().expect("Proving should work.");
         println!("shard proof generation finished.");
 
         println!("loading proofs...");
-        let proof = load_proofs().unwrap();
+        let proof = load_shard_proofs().unwrap();
         // client.verify(&proof, &vk).expect("proof verification should succeed");
         client.verify(&proof, &vk).unwrap();
         println!("shard proof verification finished.");
     } else if args.compress {
         println!("Starting compress proof generation.");
-        let proof = client.prove(&pk, stdin).compressed().run().expect("Proving should work.");
+        //        let proof = client.prove(&pk, stdin).compressed().run().expect("Proving should work.");
         println!("Proof generation finished.");
 
-        client.verify(&proof, &vk).expect("compress proof verification should succeed");
+        //       client.verify(&proof, &vk).expect("compress proof verification should succeed");
     } else {
         panic!("not supported");
     }

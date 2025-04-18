@@ -8,7 +8,7 @@ use sp1_primitives::io::SP1PublicValues;
 use strum_macros::{EnumDiscriminants, EnumTryAs};
 
 use sp1_prover::{CoreSC, Groth16Bn254Proof, InnerSC, PlonkBn254Proof};
-use sp1_stark::{MachineVerificationError, ShardProof};
+use sp1_stark::{MachineVerificationError, ShardProof, StarkVerifyingKey};
 
 /// A proof generated with SP1 of a particular proof mode.
 #[derive(Debug, Clone, Serialize, Deserialize, EnumDiscriminants, EnumTryAs)]
@@ -37,6 +37,7 @@ pub struct SP1ProofCommonData {
     pub stdin: SP1Stdin,
     pub public_values: SP1PublicValues,
     pub sp1_version: String,
+    pub vk: StarkVerifyingKey<CoreSC>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

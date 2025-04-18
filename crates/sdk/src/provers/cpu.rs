@@ -177,6 +177,7 @@ impl Prover<DefaultProverComponents> for CpuProver {
                 stdin: proof.stdin,
                 public_values: proof.public_values,
                 sp1_version: self.version().to_string(),
+                vk: pk.vk.vk.clone(),
             },
             proof.proof.0,
         ))
