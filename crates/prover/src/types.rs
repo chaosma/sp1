@@ -134,9 +134,9 @@ pub struct SP1ProofWithMetadata<P: Clone> {
 /// Input for recursion prover
 #[derive(Serialize, Deserialize, Clone)]
 pub enum RecursionInput {
-    // first layer input from core
-    Single { vk: StarkVerifyingKey<CoreSC>, proof: ShardProof<CoreSC> },
-    // intermediate layer input
+    // first layer input from core or output of recursion prover
+    Single { vk: StarkVerifyingKey<CoreSC>, proof: ShardProof<CoreSC>, is_first_shard: bool },
+    // intermediate layer input of recursion prover
     Double { vks_and_proofs: [(StarkVerifyingKey<InnerSC>, ShardProof<InnerSC>); 2] },
 }
 

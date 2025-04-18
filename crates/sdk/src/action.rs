@@ -175,8 +175,11 @@ impl<'a> Prove<'a> {
 
         // Save each ShardProof to proof_0.bin, proof_1.bin, etc.
         for (index, shard_proof) in proofs.iter().enumerate() {
-            let recursion_input =
-                RecursionInput::Single { vk: common_data.vk.clone(), proof: shard_proof.clone() };
+            let recursion_input = RecursionInput::Single {
+                vk: common_data.vk.clone(),
+                proof: shard_proof.clone(),
+                is_first_shard: index == 0,
+            };
             let proof_path = Path::new(PREFIX).join(format!("proof_{}.bin", index));
             recursion_input.save(proof_path)?;
         }
@@ -277,7 +280,7 @@ pub fn run_recursion_first_layer(index: usize) -> Result<()> {
     let proof_path = Path::new(PREFIX).join(format!("proof_{}.bin", index));
     let input = RecursionInput::load(&proof_path)?;
     let recursion_input = match input {
-        RecursionInput::Single { vk, proof } => RecursionInput::Single { vk, proof },
+        RecursionInput::Single { .. } => input,
         RecursionInput::Double { .. } => {
             return Err(anyhow!("Expected Single RecursionInput"));
         }
@@ -285,8 +288,11 @@ pub fn run_recursion_first_layer(index: usize) -> Result<()> {
 
     let prover = SP1Prover::<DefaultProverComponents>::new();
     let reduced_proof = prover.compress_proofs(&recursion_input)?;
-    let recursion_input =
-        RecursionInput::Single { vk: reduced_proof.vk, proof: reduced_proof.proof };
+    let recursion_input = RecursionInput::Single {
+        vk: reduced_proof.vk,
+        proof: reduced_proof.proof,
+        is_first_shard: false, // not used
+    };
     let proof_path = Path::new(PREFIX).join(format!("reduced_0_{}.bin", index));
     recursion_input.save(proof_path)?;
     Ok(())
@@ -308,13 +314,13 @@ pub fn run_recursion_two_to_one(
 
     // Ensure both inputs are Single (containing InnerSC proofs)
     let (vk1, proof1) = match input1 {
-        RecursionInput::Single { vk, proof } => (vk, proof),
+        RecursionInput::Single { vk, proof, .. } => (vk, proof),
         RecursionInput::Double { .. } => {
             return Err(anyhow!("Expected Single RecursionInput in {}", path1.display()));
         }
     };
     let (vk2, proof2) = match input2 {
-        RecursionInput::Single { vk, proof } => (vk, proof),
+        RecursionInput::Single { vk, proof, .. } => (vk, proof),
         RecursionInput::Double { .. } => {
             return Err(anyhow!("Expected Single RecursionInput in {}", path2.display()));
         }
@@ -328,8 +334,11 @@ pub fn run_recursion_two_to_one(
     let reduced_proof = prover.compress_proofs(&recursion_input)?;
 
     // Save the combined proof
-    let recursion_input =
-        RecursionInput::Single { vk: reduced_proof.vk, proof: reduced_proof.proof };
+    let recursion_input = RecursionInput::Single {
+        vk: reduced_proof.vk,
+        proof: reduced_proof.proof,
+        is_first_shard: false,
+    };
     let combined_path = if is_final {
         Path::new(PREFIX).join(format!("reduced_final.bin"))
     } else {

@@ -3,8 +3,8 @@ use bincode;
 use clap::Parser;
 use sp1_prover::RecursionInput;
 use sp1_sdk::{
-    include_elf, utils, ProverClient, SP1Proof, SP1ProofCommonData, SP1ProofWithPublicValues,
-    SP1Stdin,
+    action::compress_all_proofs, include_elf, utils, ProverClient, SP1Proof, SP1ProofCommonData,
+    SP1ProofWithPublicValues, SP1Stdin,
 };
 use std::fs::File;
 use std::io::Read;
@@ -24,6 +24,12 @@ struct Args {
     compress: bool,
 }
 
+fn load_final_proof() -> Result<()> {
+    let final_path = Path::new(PREFIX).join("reduced_final.bin");
+    let proof = RecursionInput::load(final_path)?;
+    Ok(())
+}
+
 fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
     let common_path = Path::new(PREFIX).join("common_data.bin");
     let mut common_file = File::open(&common_path)?;
@@ -40,7 +46,7 @@ fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
         }
         let proof = RecursionInput::load(shard_path)?;
         let shard_proof = match proof {
-            RecursionInput::Single { vk: _, proof } => proof, // Extract proof, ignore vk
+            RecursionInput::Single { vk: _, proof, .. } => proof, // Extract proof, ignore vk
             RecursionInput::Double { .. } => {
                 return Err(anyhow!("Expected Single RecursionInput, found Double"));
             }
@@ -64,8 +70,7 @@ fn main() {
     let args = Args::parse();
 
     if args.prove {
-        // Create an input stream and write '500' to it.
-        let n = 1000u32;
+        let n = 500u32;
 
         // The input stream that the program will read from using `sp1_zkvm::io::read`. Note that the
         // types of the elements in the input stream must match the types being read in the program.
@@ -93,9 +98,8 @@ fn main() {
         println!("shard proof verification finished.");
     } else if args.compress {
         println!("Starting compress proof generation.");
-        //        let proof = client.prove(&pk, stdin).compressed().run().expect("Proving should work.");
+        compress_all_proofs(4).unwrap();
         println!("Proof generation finished.");
-
         //       client.verify(&proof, &vk).expect("compress proof verification should succeed");
     } else {
         panic!("not supported");
