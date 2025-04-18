@@ -1,10 +1,7 @@
 use anyhow::Result;
 use sp1_core_executor::SP1Context;
-use sp1_core_machine::{io::SP1Stdin, reduce::SP1ReduceProof};
-use sp1_prover::{
-    components::DefaultProverComponents, CoreSC, InnerSC, RecursionInput, SP1Prover,
-    SP1RecursionProverError,
-};
+use sp1_core_machine::io::SP1Stdin;
+use sp1_prover::{components::DefaultProverComponents, CoreSC, SP1Prover};
 use sp1_stark::{MachineProver, ShardProof};
 
 use crate::{
@@ -181,14 +178,6 @@ impl Prover<DefaultProverComponents> for CpuProver {
             },
             proof.proof.0,
         ))
-    }
-
-    fn compress<'a>(
-        &'a self,
-        input: &RecursionInput,
-        opts: ProofOpts,
-    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
-        self.prover.compress_proofs(input, opts.sp1_prover_opts)
     }
 }
 

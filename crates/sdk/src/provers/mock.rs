@@ -158,14 +158,6 @@ impl Prover<DefaultProverComponents> for MockProver {
         unimplemented!()
     }
 
-    fn compress<'a>(
-        &'a self,
-        _input: &RecursionInput,
-        _opts: ProofOpts,
-    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
-        unimplemented!()
-    }
-
     fn verify(
         &self,
         bundle: &SP1ProofWithPublicValues,

@@ -129,14 +129,6 @@ impl Prover<DefaultProverComponents> for CudaProver {
     ) -> Result<(SP1ProofCommonData, Vec<ShardProof<CoreSC>>)> {
         unimplemented!()
     }
-
-    fn compress<'a>(
-        &'a self,
-        _input: &RecursionInput,
-        _opts: ProofOpts,
-    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
-        unimplemented!()
-    }
 }
 
 impl Default for CudaProver {

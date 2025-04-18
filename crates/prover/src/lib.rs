@@ -382,7 +382,6 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
     pub fn compress_proofs(
         &self,
         input: &RecursionInput,
-        opts: SP1ProverOpts,
     ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
         // TODO: figure out is_first_shard, is_complete
         let mut witness_stream = Vec::new();
@@ -416,11 +415,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
 
         // Generate the dependencies.
         let mut records = vec![record];
-        self.compress_prover.machine().generate_dependencies(
-            &mut records,
-            &opts.recursion_opts,
-            None,
-        );
+        self.compress_prover.machine().generate_dependencies_no_opt(&mut records, None);
 
         let traces = self.compress_prover.generate_traces(&records[0]);
 

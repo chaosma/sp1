@@ -1,7 +1,7 @@
 use sp1_core_executor::{ExecutionReport, HookEnv, SP1ContextBuilder};
 use sp1_core_machine::io::SP1Stdin;
 use sp1_primitives::io::SP1PublicValues;
-use sp1_prover::{components::DefaultProverComponents, RecursionInput, SP1ProvingKey};
+use sp1_prover::{components::DefaultProverComponents, RecursionInput, SP1Prover, SP1ProvingKey};
 
 use anyhow::{anyhow, Ok, Result};
 use bincode;
@@ -183,130 +183,6 @@ impl<'a> Prove<'a> {
         Ok(())
     }
 
-    // generate first layer recursion proof
-    pub fn run_recursion_first_layer(&self, index: usize) -> Result<()> {
-        let Self {
-            prover,
-            kind: _,
-            pk: _,
-            stdin: _,
-            context_builder: _,
-            core_opts,
-            recursion_opts,
-            timeout,
-        } = self;
-        let opts =
-            SP1ProverOpts { core_opts: core_opts.clone(), recursion_opts: recursion_opts.clone() };
-        let proof_opts = ProofOpts { sp1_prover_opts: opts, timeout: timeout.clone() };
-
-        let proof_path = Path::new(PREFIX).join(format!("proof_{}.bin", index));
-        let input = RecursionInput::load(&proof_path)?;
-        let recursion_input = match input {
-            RecursionInput::Single { vk, proof } => RecursionInput::Single { vk, proof },
-            RecursionInput::Double { .. } => {
-                return Err(anyhow!("Expected Single RecursionInput"));
-            }
-        };
-        let reduced_proof = prover.compress(&recursion_input, proof_opts)?;
-        let recursion_input =
-            RecursionInput::Single { vk: reduced_proof.vk, proof: reduced_proof.proof };
-        let proof_path = Path::new(PREFIX).join(format!("reduced_0_{}.bin", index));
-        recursion_input.save(proof_path)?;
-        Ok(())
-    }
-
-    // combine two recursion proofs into one
-    pub fn run_recursion_two_to_one(
-        &self,
-        in1: (usize, usize),
-        in2: (usize, usize),
-        out: (usize, usize),
-        is_final: bool,
-    ) -> Result<()> {
-        let Self {
-            prover,
-            kind: _,
-            pk: _,
-            stdin: _,
-            context_builder: _,
-            core_opts,
-            recursion_opts,
-            timeout,
-        } = self;
-
-        // Construct ProofOpts
-        let opts =
-            SP1ProverOpts { core_opts: core_opts.clone(), recursion_opts: recursion_opts.clone() };
-        let proof_opts = ProofOpts { sp1_prover_opts: opts, timeout: timeout.clone() };
-
-        // Load two reduced proofs (reduced_0.bin, reduced_1.bin)
-        let path1 = Path::new(PREFIX).join(format!("reduced_{}_{}.bin", in1.0, in1.1));
-        let path2 = Path::new(PREFIX).join(format!("reduced_{}_{}.bin", in2.0, in2.1));
-
-        let input1 = RecursionInput::load(&path1)?;
-        let input2 = RecursionInput::load(&path2)?;
-
-        // Ensure both inputs are Single (containing InnerSC proofs)
-        let (vk1, proof1) = match input1 {
-            RecursionInput::Single { vk, proof } => (vk, proof),
-            RecursionInput::Double { .. } => {
-                return Err(anyhow!("Expected Single RecursionInput in {}", path1.display()));
-            }
-        };
-        let (vk2, proof2) = match input2 {
-            RecursionInput::Single { vk, proof } => (vk, proof),
-            RecursionInput::Double { .. } => {
-                return Err(anyhow!("Expected Single RecursionInput in {}", path2.display()));
-            }
-        };
-
-        // Construct RecursionInput::Double
-        let recursion_input =
-            RecursionInput::Double { vks_and_proofs: [(vk1, proof1), (vk2, proof2)] };
-
-        // Compress the two proofs into one
-        let reduced_proof = prover.compress(&recursion_input, proof_opts)?;
-
-        // Save the combined proof
-        let recursion_input =
-            RecursionInput::Single { vk: reduced_proof.vk, proof: reduced_proof.proof };
-        let combined_path = if is_final {
-            Path::new(PREFIX).join(format!("reduced_final.bin"))
-        } else {
-            Path::new(PREFIX).join(format!("reduced_{}_{}.bin", out.0, out.1))
-        };
-        recursion_input.save(&combined_path)?;
-        Ok(())
-    }
-
-    pub fn compress_all_proofs(&self, num_proofs: usize) -> Result<()> {
-        for i in 0..num_proofs {
-            self.run_recursion_first_layer(i)?;
-        }
-
-        let mut current_proofs: Vec<usize> = (0..num_proofs).collect(); // Indices of proofs in current layer
-        let mut level = 0;
-
-        while current_proofs.len() > 1 {
-            let mut next_proofs = Vec::new();
-            for idx in 0..(current_proofs.len() / 2) {
-                let in1 = (level, current_proofs[idx * 2]);
-                let in2 = (level, current_proofs[idx * 2 + 1]);
-                let is_final = current_proofs.len() == 2 && idx == 0;
-                self.run_recursion_two_to_one(in1, in2, (level + 1, idx), is_final)?;
-                next_proofs.push(idx);
-            }
-            // Handle odd number of proofs (carry over the last one)
-            if current_proofs.len() % 2 == 1 {
-                next_proofs.push(current_proofs[current_proofs.len() - 1]);
-            }
-            current_proofs = next_proofs;
-            level += 1;
-        }
-
-        Ok(())
-    }
-
     /// Set the proof kind to the core mode. This is the default.
     pub fn core(mut self) -> Self {
         self.kind = SP1ProofKind::Core;
@@ -394,4 +270,99 @@ impl<'a> Prove<'a> {
         self.context_builder.set_skip_deferred_proof_verification(value);
         self
     }
+}
+
+// generate first layer recursion proof
+pub fn run_recursion_first_layer(index: usize) -> Result<()> {
+    let proof_path = Path::new(PREFIX).join(format!("proof_{}.bin", index));
+    let input = RecursionInput::load(&proof_path)?;
+    let recursion_input = match input {
+        RecursionInput::Single { vk, proof } => RecursionInput::Single { vk, proof },
+        RecursionInput::Double { .. } => {
+            return Err(anyhow!("Expected Single RecursionInput"));
+        }
+    };
+
+    let prover = SP1Prover::<DefaultProverComponents>::new();
+    let reduced_proof = prover.compress_proofs(&recursion_input)?;
+    let recursion_input =
+        RecursionInput::Single { vk: reduced_proof.vk, proof: reduced_proof.proof };
+    let proof_path = Path::new(PREFIX).join(format!("reduced_0_{}.bin", index));
+    recursion_input.save(proof_path)?;
+    Ok(())
+}
+
+// combine two recursion proofs into one
+pub fn run_recursion_two_to_one(
+    in1: (usize, usize),
+    in2: (usize, usize),
+    out: (usize, usize),
+    is_final: bool,
+) -> Result<()> {
+    // Load two reduced proofs (reduced_0.bin, reduced_1.bin)
+    let path1 = Path::new(PREFIX).join(format!("reduced_{}_{}.bin", in1.0, in1.1));
+    let path2 = Path::new(PREFIX).join(format!("reduced_{}_{}.bin", in2.0, in2.1));
+
+    let input1 = RecursionInput::load(&path1)?;
+    let input2 = RecursionInput::load(&path2)?;
+
+    // Ensure both inputs are Single (containing InnerSC proofs)
+    let (vk1, proof1) = match input1 {
+        RecursionInput::Single { vk, proof } => (vk, proof),
+        RecursionInput::Double { .. } => {
+            return Err(anyhow!("Expected Single RecursionInput in {}", path1.display()));
+        }
+    };
+    let (vk2, proof2) = match input2 {
+        RecursionInput::Single { vk, proof } => (vk, proof),
+        RecursionInput::Double { .. } => {
+            return Err(anyhow!("Expected Single RecursionInput in {}", path2.display()));
+        }
+    };
+
+    // Construct RecursionInput::Double
+    let recursion_input = RecursionInput::Double { vks_and_proofs: [(vk1, proof1), (vk2, proof2)] };
+
+    let prover = SP1Prover::<DefaultProverComponents>::new();
+    // Compress the two proofs into one
+    let reduced_proof = prover.compress_proofs(&recursion_input)?;
+
+    // Save the combined proof
+    let recursion_input =
+        RecursionInput::Single { vk: reduced_proof.vk, proof: reduced_proof.proof };
+    let combined_path = if is_final {
+        Path::new(PREFIX).join(format!("reduced_final.bin"))
+    } else {
+        Path::new(PREFIX).join(format!("reduced_{}_{}.bin", out.0, out.1))
+    };
+    recursion_input.save(&combined_path)?;
+    Ok(())
+}
+
+pub fn compress_all_proofs(num_proofs: usize) -> Result<()> {
+    for i in 0..num_proofs {
+        run_recursion_first_layer(i)?;
+    }
+
+    let mut current_proofs: Vec<usize> = (0..num_proofs).collect(); // Indices of proofs in current layer
+    let mut level = 0;
+
+    while current_proofs.len() > 1 {
+        let mut next_proofs = Vec::new();
+        for idx in 0..(current_proofs.len() / 2) {
+            let in1 = (level, current_proofs[idx * 2]);
+            let in2 = (level, current_proofs[idx * 2 + 1]);
+            let is_final = current_proofs.len() == 2 && idx == 0;
+            run_recursion_two_to_one(in1, in2, (level + 1, idx), is_final)?;
+            next_proofs.push(idx);
+        }
+        // Handle odd number of proofs (carry over the last one)
+        if current_proofs.len() % 2 == 1 {
+            next_proofs.push(current_proofs[current_proofs.len() - 1]);
+        }
+        current_proofs = next_proofs;
+        level += 1;
+    }
+
+    Ok(())
 }

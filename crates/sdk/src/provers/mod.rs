@@ -14,10 +14,10 @@ use std::{borrow::Borrow, time::Duration};
 
 use anyhow::Result;
 use sp1_core_executor::SP1Context;
-use sp1_core_machine::{io::SP1Stdin, reduce::SP1ReduceProof, SP1_CIRCUIT_VERSION};
+use sp1_core_machine::{io::SP1Stdin, SP1_CIRCUIT_VERSION};
 use sp1_prover::{
-    components::SP1ProverComponents, CoreSC, InnerSC, RecursionInput, SP1CoreProofData, SP1Prover,
-    SP1ProvingKey, SP1RecursionProverError, SP1VerifyingKey,
+    components::SP1ProverComponents, CoreSC, InnerSC, SP1CoreProofData, SP1Prover, SP1ProvingKey,
+    SP1VerifyingKey,
 };
 use sp1_stark::{air::PublicValues, MachineVerificationError, SP1ProverOpts, ShardProof, Word};
 use strum_macros::EnumString;
@@ -94,11 +94,10 @@ pub trait Prover<C: SP1ProverComponents>: Send + Sync {
 
     /// compress shard proofs, either compress one core shard proof
     /// or compress two reduced shard proofs
-    fn compress<'a>(
-        &'a self,
-        input: &RecursionInput,
-        opts: ProofOpts,
-    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError>;
+    //    fn compress<'a>(
+    //        &'a self,
+    //        input: &RecursionInput,
+    //    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError>;
 
     /// Verify that an SP1 proof is valid given its vkey and metadata.
     /// For Plonk proofs, verifies that the public inputs of the PlonkBn254 proof match
