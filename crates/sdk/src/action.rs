@@ -287,7 +287,7 @@ pub fn run_recursion_first_layer(index: usize) -> Result<()> {
     };
 
     let prover = SP1Prover::<DefaultProverComponents>::new();
-    let reduced_proof = prover.compress_proofs(&recursion_input)?;
+    let reduced_proof = prover.compress_proofs(&recursion_input, false)?;
     let recursion_input = RecursionInput::Single {
         vk: reduced_proof.vk,
         proof: reduced_proof.proof,
@@ -303,7 +303,7 @@ pub fn run_recursion_two_to_one(
     in1: (usize, usize),
     in2: (usize, usize),
     out: (usize, usize),
-    is_final: bool,
+    is_complete: bool,
 ) -> Result<()> {
     // Load two reduced proofs (reduced_0.bin, reduced_1.bin)
     let path1 = Path::new(PREFIX).join(format!("reduced_{}_{}.bin", in1.0, in1.1));
@@ -331,7 +331,7 @@ pub fn run_recursion_two_to_one(
 
     let prover = SP1Prover::<DefaultProverComponents>::new();
     // Compress the two proofs into one
-    let reduced_proof = prover.compress_proofs(&recursion_input)?;
+    let reduced_proof = prover.compress_proofs(&recursion_input, is_complete)?;
 
     // Save the combined proof
     let recursion_input = RecursionInput::Single {
@@ -339,7 +339,7 @@ pub fn run_recursion_two_to_one(
         proof: reduced_proof.proof,
         is_first_shard: false,
     };
-    let combined_path = if is_final {
+    let combined_path = if is_complete {
         Path::new(PREFIX).join(format!("reduced_final.bin"))
     } else {
         Path::new(PREFIX).join(format!("reduced_{}_{}.bin", out.0, out.1))

@@ -297,6 +297,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         &self,
         vkey: SP1VerifyingKey,
         input: RecursionInput,
+        pub_values: SP1PublicValues,
     ) -> Result<(), MachineVerificationError<CoreSC>> {
         let (vk, proof) = match input {
             RecursionInput::Single { vk, proof, .. } => (vk, proof),
@@ -307,19 +308,18 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         let public_values: &PublicValues<Word<_>, _> = proof.public_values.as_slice().borrow();
 
         // Get the committed value digest bytes.
-        let _committed_value_digest_bytes = public_values
+        let committed_value_digest_bytes = public_values
             .committed_value_digest
             .iter()
             .flat_map(|w| w.0.iter().map(|x| x.as_canonical_u32() as u8))
             .collect::<Vec<_>>();
 
-        // TODO: (chao) fix public value compare
         // Make sure the committed value digest matches the public values hash.
-        //        for (a, b) in committed_value_digest_bytes.iter().zip_eq(public_values.hash()) {
-        //            if *a != b {
-        //                return Err(MachineVerificationError::InvalidPublicValuesDigest);
-        //            }
-        //        }
+        for (a, b) in committed_value_digest_bytes.iter().zip_eq(pub_values.hash()) {
+            if *a != b {
+                return Err(MachineVerificationError::InvalidPublicValuesDigest);
+            }
+        }
 
         let proof = SP1ReduceProof { vk, proof };
 
@@ -351,10 +351,9 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
 
         // `is_complete` should be 1. In the reduce program, this ensures that the proof is fully
         // reduced.
-        // TODO: (chao) fix is_complete
-        //        if public_values.is_complete != BabyBear::one() {
-        //            return Err(MachineVerificationError::InvalidPublicValues("is_complete is not 1"));
-        //        }
+        if public_values.is_complete != BabyBear::one() {
+            return Err(MachineVerificationError::InvalidPublicValues("is_complete is not 1"));
+        }
 
         // Verify that the proof is for the sp1 vkey we are expecting.
         let vkey_hash = vk.hash_babybear();

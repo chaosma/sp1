@@ -86,7 +86,6 @@ fn main() {
 
         println!("loading proofs...");
         let proof = load_shard_proofs().unwrap();
-        // client.verify(&proof, &vk).expect("proof verification should succeed");
         client.verify(&proof, &vk).unwrap();
         println!("shard proof verification finished.");
     } else if args.compress {
@@ -97,7 +96,12 @@ fn main() {
 
         let final_path = Path::new(PREFIX).join("reduced_final.bin");
         let input = RecursionInput::load(final_path).unwrap();
-        prover.verify_final_compressed(vk, input).unwrap();
+        let common_path = Path::new(PREFIX).join("common_data.bin");
+        let mut common_file = File::open(&common_path).unwrap();
+        let mut common_serialized = Vec::new();
+        common_file.read_to_end(&mut common_serialized).unwrap();
+        let common_data: SP1ProofCommonData = bincode::deserialize(&common_serialized).unwrap();
+        prover.verify_final_compressed(vk, input, common_data.public_values).unwrap();
         println!("Verify final proof finished");
     } else {
         panic!("not supported");

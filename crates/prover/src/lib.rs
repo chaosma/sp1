@@ -382,8 +382,8 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
     pub fn compress_proofs(
         &self,
         input: &RecursionInput,
+        is_complete: bool,
     ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
-        // TODO: (chao) is_complete
         let mut witness_stream = Vec::new();
         let (witness_stream, program) = match input {
             RecursionInput::Single { vk, proof, is_first_shard } => {
@@ -396,7 +396,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             RecursionInput::Double { vks_and_proofs } => {
                 let input = SP1CompressWitnessValues {
                     vks_and_proofs: vks_and_proofs.to_vec(),
-                    is_complete: false,
+                    is_complete,
                 };
                 let input_with_merkle = self.make_merkle_proofs(input);
                 Witnessable::<InnerConfig>::write(&input_with_merkle, &mut witness_stream);
