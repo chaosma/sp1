@@ -383,7 +383,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         &self,
         input: &RecursionInput,
     ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
-        // TODO: figure out is_first_shard, is_complete
+        // TODO: (chao) is_complete
         let mut witness_stream = Vec::new();
         let (witness_stream, program) = match input {
             RecursionInput::Single { vk, proof, is_first_shard } => {

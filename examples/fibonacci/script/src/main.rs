@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use bincode;
 use clap::Parser;
-use sp1_prover::RecursionInput;
+use sp1_prover::{components::DefaultProverComponents, RecursionInput, SP1Prover};
 use sp1_sdk::{
     action::compress_all_proofs, include_elf, utils, ProverClient, SP1Proof, SP1ProofCommonData,
     SP1ProofWithPublicValues, SP1Stdin,
@@ -22,12 +22,6 @@ struct Args {
     prove: bool,
     #[arg(long, default_value_t = false)]
     compress: bool,
-}
-
-fn load_final_proof() -> Result<()> {
-    let final_path = Path::new(PREFIX).join("reduced_final.bin");
-    let proof = RecursionInput::load(final_path)?;
-    Ok(())
 }
 
 fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
@@ -68,25 +62,24 @@ fn main() {
     utils::setup_logger();
 
     let args = Args::parse();
+    let n = 500u32;
+
+    // The input stream that the program will read from using `sp1_zkvm::io::read`. Note that the
+    // types of the elements in the input stream must match the types being read in the program.
+    let mut stdin = SP1Stdin::new();
+    stdin.write(&n);
+
+    // Create a `ProverClient` method.
+    let client = ProverClient::new();
+
+    // Execute the program using the `ProverClient.execute` method, without generating a proof.
+    let (_, report) = client.execute(ELF, stdin.clone()).run().unwrap();
+    println!("executed program with {} cycles", report.total_instruction_count());
+
+    // Generate the proof for the given program and input.
+    let (pk, vk) = client.setup(ELF);
 
     if args.prove {
-        let n = 500u32;
-
-        // The input stream that the program will read from using `sp1_zkvm::io::read`. Note that the
-        // types of the elements in the input stream must match the types being read in the program.
-        let mut stdin = SP1Stdin::new();
-        stdin.write(&n);
-
-        // Create a `ProverClient` method.
-        let client = ProverClient::new();
-
-        // Execute the program using the `ProverClient.execute` method, without generating a proof.
-        let (_, report) = client.execute(ELF, stdin.clone()).run().unwrap();
-        println!("executed program with {} cycles", report.total_instruction_count());
-
-        // Generate the proof for the given program and input.
-        let (pk, vk) = client.setup(ELF);
-
         println!("Starting shard proof generation.");
         client.prove(&pk, stdin).run_shard_proof().expect("Proving should work.");
         println!("shard proof generation finished.");
@@ -100,7 +93,12 @@ fn main() {
         println!("Starting compress proof generation.");
         compress_all_proofs(4).unwrap();
         println!("Proof generation finished.");
-        //       client.verify(&proof, &vk).expect("compress proof verification should succeed");
+        let prover = SP1Prover::<DefaultProverComponents>::new();
+
+        let final_path = Path::new(PREFIX).join("reduced_final.bin");
+        let input = RecursionInput::load(final_path).unwrap();
+        prover.verify_final_compressed(vk, input).unwrap();
+        println!("Verify final proof finished");
     } else {
         panic!("not supported");
     }
