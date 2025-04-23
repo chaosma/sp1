@@ -8,7 +8,7 @@ use bincode;
 use sp1_stark::{SP1CoreOpts, SP1ProverOpts};
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::{provers::ProofOpts, Prover, SP1ProofKind, SP1ProofWithPublicValues};
@@ -300,14 +300,13 @@ pub fn run_recursion_first_layer(index: usize) -> Result<()> {
 
 // combine two recursion proofs into one
 pub fn run_recursion_two_to_one(
-    in1: (usize, usize),
-    in2: (usize, usize),
-    out: (usize, usize),
+    path1: impl AsRef<Path>,
+    path2: impl AsRef<Path>,
+    out_path: impl AsRef<Path>,
     is_complete: bool,
 ) -> Result<()> {
-    // Load two reduced proofs (reduced_0.bin, reduced_1.bin)
-    let path1 = Path::new(PREFIX).join(format!("reduced_{}_{}.bin", in1.0, in1.1));
-    let path2 = Path::new(PREFIX).join(format!("reduced_{}_{}.bin", in2.0, in2.1));
+    let path1 = path1.as_ref();
+    let path2 = path2.as_ref();
 
     let input1 = RecursionInput::load(&path1)?;
     let input2 = RecursionInput::load(&path2)?;
@@ -339,12 +338,7 @@ pub fn run_recursion_two_to_one(
         proof: reduced_proof.proof,
         is_first_shard: false,
     };
-    let combined_path = if is_complete {
-        Path::new(PREFIX).join(format!("reduced_final.bin"))
-    } else {
-        Path::new(PREFIX).join(format!("reduced_{}_{}.bin", out.0, out.1))
-    };
-    recursion_input.save(&combined_path)?;
+    recursion_input.save(&out_path)?;
     Ok(())
 }
 
@@ -353,21 +347,32 @@ pub fn compress_all_proofs(num_proofs: usize) -> Result<()> {
         run_recursion_first_layer(i)?;
     }
 
-    let mut current_proofs: Vec<usize> = (0..num_proofs).collect(); // Indices of proofs in current layer
+    let mut current_proofs: Vec<PathBuf> =
+        (0..num_proofs).map(|i| Path::new(PREFIX).join(format!("reduced_0_{}.bin", i))).collect();
     let mut level = 0;
 
     while current_proofs.len() > 1 {
         let mut next_proofs = Vec::new();
         for idx in 0..(current_proofs.len() / 2) {
-            let in1 = (level, current_proofs[idx * 2]);
-            let in2 = (level, current_proofs[idx * 2 + 1]);
+            let in1 = idx * 2;
+            let in2 = idx * 2 + 1;
+            let path1 = current_proofs[in1].clone();
+            let path2 = current_proofs[in2].clone();
             let is_final = current_proofs.len() == 2 && idx == 0;
-            run_recursion_two_to_one(in1, in2, (level + 1, idx), is_final)?;
-            next_proofs.push(idx);
+            let output_filename = if is_final {
+                "reduced_final.bin".to_string()
+            } else {
+                format!("reduced_{}_{}.bin", level, idx)
+            };
+            let output_path = Path::new(PREFIX).join(&output_filename);
+
+            // Run two-to-one compression
+            run_recursion_two_to_one(&path1, &path2, &output_path, is_final)?;
+            next_proofs.push(output_path);
         }
-        // Handle odd number of proofs (carry over the last one)
+        // Carry over the last proof if odd
         if current_proofs.len() % 2 == 1 {
-            next_proofs.push(current_proofs[current_proofs.len() - 1]);
+            next_proofs.push(current_proofs[current_proofs.len() - 1].clone());
         }
         current_proofs = next_proofs;
         level += 1;

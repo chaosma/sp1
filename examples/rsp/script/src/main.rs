@@ -66,6 +66,9 @@ fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
 }
 
 fn main() {
+    // this is the total number of shard_proofs to be compressed
+    let num_proofs = 21;
+
     // Initialize the logger.
     utils::setup_logger();
 
@@ -109,7 +112,7 @@ fn main() {
         println!("shard proof verification finished.");
     } else if args.compress {
         println!("Starting compress proof generation.");
-        compress_all_proofs(4).unwrap();
+        compress_all_proofs(num_proofs).unwrap();
         println!("Proof generation finished.");
         let prover = SP1Prover::<DefaultProverComponents>::new();
 
