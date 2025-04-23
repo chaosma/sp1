@@ -62,7 +62,7 @@ fn main() {
     utils::setup_logger();
 
     let args = Args::parse();
-    let n = 500u32;
+    let n = 20000u32;
 
     // The input stream that the program will read from using `sp1_zkvm::io::read`. Note that the
     // types of the elements in the input stream must match the types being read in the program.
