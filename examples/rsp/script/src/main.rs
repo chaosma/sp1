@@ -67,7 +67,7 @@ fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
 
 fn main() {
     // this is the total number of shard_proofs to be compressed
-    let num_proofs = 21;
+    let num_proofs = 14;
 
     // Initialize the logger.
     utils::setup_logger();
