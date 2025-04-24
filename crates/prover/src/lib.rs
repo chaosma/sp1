@@ -388,18 +388,10 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         let mut witness_stream = Vec::new();
         let (witness_stream, program) = match input {
             RecursionInput::Single { vk, proof, is_first_shard } => {
-                println!("hehe0, is_first_shard={}", is_first_shard);
                 let input = self.prepare_first_layer_input(&vk, &proof, *is_first_shard);
-                println!("hehe1");
                 let mut witness_stream = Vec::new();
                 Witnessable::<InnerConfig>::write(&input, &mut witness_stream);
                 let program = self.recursion_program(&input);
-                match to_string_pretty(&program) {
-                    Ok(pretty) => println!("hehe2, program:\n{}", pretty),
-                    Err(e) => {
-                        println!("hehe2, program (failed to serialize: {})", e)
-                    }
-                }
                 (witness_stream, program)
             }
             RecursionInput::Double { vks_and_proofs } => {
@@ -419,12 +411,6 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             self.compress_prover.config().perm.clone(),
         );
         runtime.witness_stream = witness_stream.into();
-        match to_string_pretty(&runtime.witness_stream) {
-            Ok(pretty) => println!("hehe3, witness_stream:\n{}", pretty),
-            Err(e) => {
-                println!("hehe3, witness_stream(failed to serialize: {})", e)
-            }
-        }
         runtime.run().map_err(|e| SP1RecursionProverError::RuntimeError(e.to_string())).unwrap();
         println!("hehe4");
         let record = runtime.record;
