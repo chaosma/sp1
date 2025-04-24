@@ -18,6 +18,7 @@ pub mod types;
 pub mod utils;
 pub mod verify;
 
+use serde_json::to_string_pretty;
 use std::{
     borrow::Borrow,
     collections::BTreeMap,
@@ -393,7 +394,12 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                 let mut witness_stream = Vec::new();
                 Witnessable::<InnerConfig>::write(&input, &mut witness_stream);
                 let program = self.recursion_program(&input);
-                println!("hehe2, program = {:?}", &program);
+                match to_string_pretty(&program) {
+                    Ok(pretty) => println!("hehe2, program:\n{}", pretty),
+                    Err(e) => {
+                        println!("hehe2, program (failed to serialize: {})", e)
+                    }
+                }
                 (witness_stream, program)
             }
             RecursionInput::Double { vks_and_proofs } => {
@@ -413,7 +419,12 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             self.compress_prover.config().perm.clone(),
         );
         runtime.witness_stream = witness_stream.into();
-        println!("hehe3, witness_stream={:?}", &runtime.witness_stream);
+        match to_string_pretty(&runtime.witness_stream) {
+            Ok(pretty) => println!("hehe3, witness_stream:\n{}", pretty),
+            Err(e) => {
+                println!("hehe3, witness_stream(failed to serialize: {})", e)
+            }
+        }
         runtime.run().map_err(|e| SP1RecursionProverError::RuntimeError(e.to_string())).unwrap();
         println!("hehe4");
         let record = runtime.record;
