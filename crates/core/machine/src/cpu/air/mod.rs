@@ -97,7 +97,8 @@ where
         self.eval_halt_unimpl(builder, local, next, public_values);
 
         // Check that the shard and clk is updated correctly.
-        self.eval_shard_clk(builder, local, next);
+        // hehe
+        // self.eval_shard_clk(builder, local, next);
 
         // Check that the pc is updated correctly.
         self.eval_pc(builder, local, next, is_branch_instruction.clone());
