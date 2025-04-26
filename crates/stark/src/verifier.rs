@@ -66,6 +66,7 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> Verifier<SC, A> {
                 .unwrap();
         });
 
+        println!("hehe7, max_byte_lookup_mult={}", max_byte_lookup_mult);
         assert!(
             max_byte_lookup_mult <= SC::Val::order().to_u64().unwrap(),
             "Byte multiplicities overflow"

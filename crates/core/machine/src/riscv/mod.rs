@@ -823,8 +823,8 @@ pub mod tests {
         let mut chips = RiscvAir::<BabyBear>::chips();
         chips.sort_by_key(|chip| chip.width());
 
-        println!("chip                      | main | perm | prep | quot | constraints ");
-        println!("--------------------------------------------------------------------");
+        println!("chip                      | main | perm | prep | quot | constraints |  interactions | sends | receives  ");
+        println!("--------------------------------------------------------------------------------------------------------");
 
         // copied from crates/stark/src/types.rs
         let proof_max_num_pvs: usize = 231;
@@ -835,14 +835,20 @@ pub mod tests {
             let prep = chip.preprocessed_width();
             let quot = chip.quotient_width();
             let constraints = get_symbolic_constraints(&chip.air, prep, proof_max_num_pvs);
+            let interactions = chip.num_interactions();
+            let sends = chip.sends().len();
+            let receives = chip.receives().len();
             println!(
-                "{:25} | {:4} | {:4} | {:4} | {:4} | {:11} ",
+                "{:25} | {:4} | {:4} | {:4} | {:4} | {:11} | {:4} | {:4} | {:4}",
                 name,
                 main,
                 perm,
                 prep,
                 quot,
                 constraints.len(),
+                interactions,
+                sends,
+                receives,
             );
         }
     }
