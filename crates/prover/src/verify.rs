@@ -72,9 +72,10 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         //
         // Assert that the CPU log degree does not exceed `MAX_CPU_LOG_DEGREE`. This is to ensure
         // that the lookup argument's multiplicities do not overflow.
-        for shard_proof in proof.0.iter() {
+        for (i, shard_proof) in proof.0.iter().enumerate() {
             if shard_proof.contains_cpu() {
                 let log_degree_cpu = shard_proof.log_degree_cpu();
+                println!("hehe7, [verify] shard {} log_degree_cpu = {}", i, log_degree_cpu);
                 if log_degree_cpu > MAX_CPU_LOG_DEGREE {
                     return Err(MachineVerificationError::CpuLogDegreeTooLarge(log_degree_cpu));
                 }

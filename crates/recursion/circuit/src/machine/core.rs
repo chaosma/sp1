@@ -305,6 +305,7 @@ where
             // CPU log degree bound check constraints (this assertion is made in compile time).
             if shard_proof.contains_cpu() {
                 let log_degree_cpu = shard_proof.log_degree_cpu();
+                println!("hehe7, [recursion] log_degree_cpu={}", log_degree_cpu);
                 assert!(log_degree_cpu <= MAX_CPU_LOG_DEGREE);
             }
 
