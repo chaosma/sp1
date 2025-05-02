@@ -1,6 +1,7 @@
 use sp1_core_executor::{ExecutionReport, HookEnv, SP1ContextBuilder};
 use sp1_core_machine::io::SP1Stdin;
 use sp1_primitives::io::SP1PublicValues;
+use sp1_prover::components::SP1ProverComponents;
 use sp1_prover::{components::DefaultProverComponents, RecursionInput, SP1Prover, SP1ProvingKey};
 
 use anyhow::{anyhow, Ok, Result};
@@ -276,7 +277,10 @@ impl<'a> Prove<'a> {
 }
 
 // generate first layer recursion proof
-pub fn run_recursion_first_layer(index: usize) -> Result<()> {
+pub fn run_recursion_first_layer(
+    prover: &SP1Prover<DefaultProverComponents>,
+    index: usize,
+) -> Result<()> {
     let proof_path = Path::new(PREFIX).join(format!("proof_{}.bin", index));
     let input = RecursionInput::load(&proof_path)?;
     let recursion_input = match input {
@@ -286,7 +290,6 @@ pub fn run_recursion_first_layer(index: usize) -> Result<()> {
         }
     };
 
-    let prover = SP1Prover::<DefaultProverComponents>::new();
     let reduced_proof = prover.compress_proofs(&recursion_input, false)?;
     let recursion_input = RecursionInput::Single {
         vk: reduced_proof.vk,
@@ -300,6 +303,7 @@ pub fn run_recursion_first_layer(index: usize) -> Result<()> {
 
 // combine two recursion proofs into one
 pub fn run_recursion_two_to_one(
+    prover: &SP1Prover<DefaultProverComponents>,
     path1: impl AsRef<Path>,
     path2: impl AsRef<Path>,
     out_path: impl AsRef<Path>,
@@ -328,7 +332,6 @@ pub fn run_recursion_two_to_one(
     // Construct RecursionInput::Double
     let recursion_input = RecursionInput::Double { vks_and_proofs: [(vk1, proof1), (vk2, proof2)] };
 
-    let prover = SP1Prover::<DefaultProverComponents>::new();
     // Compress the two proofs into one
     let reduced_proof = prover.compress_proofs(&recursion_input, is_complete)?;
 
@@ -343,8 +346,9 @@ pub fn run_recursion_two_to_one(
 }
 
 pub fn compress_all_proofs(num_proofs: usize) -> Result<()> {
+    let prover = SP1Prover::<DefaultProverComponents>::new();
     for i in 0..num_proofs {
-        run_recursion_first_layer(i)?;
+        run_recursion_first_layer(&prover, i)?;
     }
 
     let mut current_proofs: Vec<PathBuf> =
@@ -367,7 +371,7 @@ pub fn compress_all_proofs(num_proofs: usize) -> Result<()> {
             let output_path = Path::new(PREFIX).join(&output_filename);
 
             // Run two-to-one compression
-            run_recursion_two_to_one(&path1, &path2, &output_path, is_final)?;
+            run_recursion_two_to_one(&prover, &path1, &path2, &output_path, is_final)?;
             next_proofs.push(output_path);
         }
         // Carry over the last proof if odd
