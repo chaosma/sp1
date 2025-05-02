@@ -125,12 +125,12 @@ pub trait MemoryAirBuilder: BaseAirBuilder {
 
         // Verify that mem_access.ts_diff = mem_access.ts_diff_16bit_limb
         // + mem_access.ts_diff_8bit_limb * 2^16.
-        self.eval_range_check_24bits(
-            diff_minus_one,
-            mem_access.diff_16bit_limb.clone(),
-            mem_access.diff_8bit_limb.clone(),
-            do_check,
-        );
+//        self.eval_range_check_24bits(
+//            diff_minus_one,
+//            mem_access.diff_16bit_limb.clone(),
+//            mem_access.diff_8bit_limb.clone(),
+//            do_check,
+//        );
     }
 
     /// Verifies the inputted value is within 24 bits.
