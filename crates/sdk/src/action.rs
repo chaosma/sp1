@@ -287,7 +287,8 @@ pub fn run_recursion_first_layer(index: usize) -> Result<()> {
     };
 
     let prover = SP1Prover::<DefaultProverComponents>::new();
-    let reduced_proof = prover.compress_proofs(&recursion_input, false)?;
+    let debug_info = format!("hehe5, first_layer, idx={}", index);
+    let reduced_proof = prover.compress_proofs(&recursion_input, false, &debug_info)?;
     let recursion_input = RecursionInput::Single {
         vk: reduced_proof.vk,
         proof: reduced_proof.proof,
@@ -330,7 +331,8 @@ pub fn run_recursion_two_to_one(
 
     let prover = SP1Prover::<DefaultProverComponents>::new();
     // Compress the two proofs into one
-    let reduced_proof = prover.compress_proofs(&recursion_input, is_complete)?;
+    let debug_info = format!("hehe5, intermediate layers, path1={:?}, path2={:?}", path1, path2);
+    let reduced_proof = prover.compress_proofs(&recursion_input, is_complete, &debug_info)?;
 
     // Save the combined proof
     let recursion_input = RecursionInput::Single {

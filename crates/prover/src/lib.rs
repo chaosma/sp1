@@ -383,6 +383,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         &self,
         input: &RecursionInput,
         is_complete: bool,
+        debug_info: &str,
     ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
         let mut witness_stream = Vec::new();
         let (witness_stream, program) = match input {
@@ -390,6 +391,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                 let input = self.prepare_first_layer_input(&vk, &proof, *is_first_shard);
                 let mut witness_stream = Vec::new();
                 Witnessable::<InnerConfig>::write(&input, &mut witness_stream);
+                println!("{}", debug_info);
                 let program = self.recursion_program(&input);
                 (witness_stream, program)
             }
@@ -400,6 +402,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                 };
                 let input_with_merkle = self.make_merkle_proofs(input);
                 Witnessable::<InnerConfig>::write(&input_with_merkle, &mut witness_stream);
+                println!("{}", debug_info);
                 let program = self.compress_program(false, &input_with_merkle);
                 (witness_stream, program)
             }
@@ -1006,10 +1009,12 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         println!("getting recursion program: {:?}", input.shape());
         let mut cache = self.recursion_programs.lock().unwrap_or_else(|e| e.into_inner());
         println!("inserting to cache");
+        let shape = input.shape();
+        println!("hehe5, input_shape={:?}", &shape);
         cache
             .get_or_insert(input.shape(), || {
                 let misses = self.recursion_cache_misses.fetch_add(1, Ordering::Relaxed);
-                tracing::debug!("core cache miss, misses: {}", misses);
+                tracing::debug!("hehe5 core cache miss, misses: {}", misses);
                 // Get the operations.
                 let builder_span = tracing::debug_span!("build recursion program").entered();
                 let mut builder = Builder::<InnerConfig>::default();
@@ -1038,10 +1043,14 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         shape_tuning: bool,
         input: &SP1CompressWithVKeyWitnessValues<InnerSC>,
     ) -> Arc<RecursionProgram<BabyBear>> {
+        let shape = input.shape();
+        println!("hehe5, input_shape={:?}", &shape);
         if self.recursion_shape_config.is_some() && !shape_tuning {
+            println!("hehe5, good, cache hit!");
             self.compress_programs.get(&input.shape()).map(Clone::clone).unwrap()
         } else {
             // Get the operations.
+            println!("hehe5, bad, cache miss!");
             Arc::new(compress_program_from_input::<C>(
                 self.recursion_shape_config.as_ref(),
                 &self.compress_prover,
