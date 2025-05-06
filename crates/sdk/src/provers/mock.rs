@@ -2,13 +2,14 @@
 use hashbrown::HashMap;
 use sp1_core_executor::{SP1Context, SP1ReduceProof};
 use sp1_core_machine::io::SP1Stdin;
+use sp1_prover::{InnerSC, RecursionInput, SP1RecursionProverError};
 use sp1_stark::{
     septic_digest::SepticDigest, ShardCommitment, ShardOpenedValues, ShardProof, StarkVerifyingKey,
 };
 
 use crate::{
-    Prover, SP1Proof, SP1ProofKind, SP1ProofWithPublicValues, SP1ProvingKey, SP1VerificationError,
-    SP1VerifyingKey,
+    Prover, SP1Proof, SP1ProofCommonData, SP1ProofKind, SP1ProofWithPublicValues, SP1ProvingKey,
+    SP1VerificationError, SP1VerifyingKey,
 };
 use anyhow::Result;
 use p3_baby_bear::BabyBear;
@@ -17,7 +18,7 @@ use p3_fri::{FriProof, TwoAdicFriPcsProof};
 use sp1_prover::{
     components::DefaultProverComponents,
     verify::{verify_groth16_bn254_public_inputs, verify_plonk_bn254_public_inputs},
-    Groth16Bn254Proof, HashableKey, PlonkBn254Proof, SP1Prover,
+    CoreSC, Groth16Bn254Proof, HashableKey, PlonkBn254Proof, SP1Prover,
 };
 
 use super::{ProofOpts, ProverType};
@@ -145,6 +146,16 @@ impl Prover<DefaultProverComponents> for MockProver {
                 })
             }
         }
+    }
+
+    fn prove_shard<'a>(
+        &'a self,
+        _pk: &SP1ProvingKey,
+        _stdin: SP1Stdin,
+        _opts: ProofOpts,
+        _context: SP1Context<'a>,
+    ) -> Result<(SP1ProofCommonData, Vec<ShardProof<CoreSC>>)> {
+        unimplemented!()
     }
 
     fn verify(

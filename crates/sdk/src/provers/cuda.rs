@@ -1,13 +1,15 @@
 use anyhow::Result;
-use sp1_core_machine::io::SP1Stdin;
 use sp1_cuda::SP1CudaProver;
-use sp1_prover::{components::DefaultProverComponents, SP1Prover};
+use sp1_prover::{components::DefaultProverComponents, CoreSC, SP1Prover};
+use sp1_prover::{InnerSC, RecursionInput, SP1RecursionProverError};
+use sp1_stark::ShardProof;
 
 use super::ProverType;
 use crate::{
     install::try_install_circuit_artifacts, provers::ProofOpts, Prover, SP1Context, SP1Proof,
-    SP1ProofKind, SP1ProofWithPublicValues, SP1ProvingKey, SP1VerifyingKey,
+    SP1ProofCommonData, SP1ProofKind, SP1ProofWithPublicValues, SP1ProvingKey, SP1VerifyingKey,
 };
+use sp1_core_machine::{io::SP1Stdin, reduce::SP1ReduceProof, SP1_CIRCUIT_VERSION};
 
 /// An implementation of [crate::ProverClient] that can generate proofs locally using CUDA.
 pub struct CudaProver {
@@ -116,6 +118,16 @@ impl Prover<DefaultProverComponents> for CudaProver {
         }
 
         unreachable!()
+    }
+
+    fn prove_shard<'a>(
+        &'a self,
+        _pk: &SP1ProvingKey,
+        _stdin: SP1Stdin,
+        _opts: ProofOpts,
+        _context: SP1Context<'a>,
+    ) -> Result<(SP1ProofCommonData, Vec<ShardProof<CoreSC>>)> {
+        unimplemented!()
     }
 }
 

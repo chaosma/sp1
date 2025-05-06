@@ -379,6 +379,80 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         })
     }
 
+    pub fn compress_proofs(
+        &self,
+        input: &RecursionInput,
+        is_complete: bool,
+    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
+        let mut witness_stream = Vec::new();
+        let (witness_stream, program) = match input {
+            RecursionInput::Single { vk, proof, is_first_shard } => {
+                let input = self.prepare_first_layer_input(&vk, &proof, *is_first_shard);
+                let mut witness_stream = Vec::new();
+                Witnessable::<InnerConfig>::write(&input, &mut witness_stream);
+                let program = self.recursion_program(&input);
+                (witness_stream, program)
+            }
+            RecursionInput::Double { vks_and_proofs } => {
+                let input = SP1CompressWitnessValues {
+                    vks_and_proofs: vks_and_proofs.to_vec(),
+                    is_complete,
+                };
+                let input_with_merkle = self.make_merkle_proofs(input);
+                Witnessable::<InnerConfig>::write(&input_with_merkle, &mut witness_stream);
+                let program = self.compress_program(false, &input_with_merkle);
+                (witness_stream, program)
+            }
+        };
+
+        let mut runtime = RecursionRuntime::<Val<InnerSC>, Challenge<InnerSC>, _>::new(
+            program.clone(),
+            self.compress_prover.config().perm.clone(),
+        );
+        runtime.witness_stream = witness_stream.into();
+        runtime.run().map_err(|e| SP1RecursionProverError::RuntimeError(e.to_string())).unwrap();
+        let record = runtime.record;
+
+        // Generate the dependencies.
+        let mut records = vec![record];
+        self.compress_prover.machine().generate_dependencies_no_opt(&mut records, None);
+
+        let traces = self.compress_prover.generate_traces(&records[0]);
+
+        // Get the keys.
+        let (pk, vk) = self.compress_prover.setup(&program);
+
+        // Observe the proving key.
+        let mut challenger = self.compress_prover.config().challenger();
+        pk.observe_into(&mut challenger);
+
+        // [Debug]
+        //        *self.compress_prover.debug_constraints(
+        //            &self.compress_prover.pk_to_host(&pk),
+        //            vec![records[0].clone()],
+        //            &mut challenger.clone(),
+        //        );
+
+        // Commit to the record and traces.
+        let data = self.compress_prover.commit(&records[0], traces);
+
+        // Generate the proof.
+        let proof = tracing::debug_span!("open")
+            .in_scope(|| self.compress_prover.open(&pk, data, &mut challenger).unwrap());
+
+        // [Debug]
+        self.compress_prover
+            .machine()
+            .verify(
+                &vk,
+                &sp1_stark::MachineProof { shard_proofs: vec![proof.clone()] },
+                &mut self.compress_prover.config().challenger(),
+            )
+            .unwrap();
+
+        Ok(SP1ReduceProof { vk, proof })
+    }
+
     /// Reduce shards proofs to a single shard proof using the recursion prover.
     #[instrument(name = "compress", level = "info", skip_all)]
     pub fn compress(
@@ -1152,6 +1226,23 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             deferred_digest = Self::hash_deferred_proofs(deferred_digest, batch);
         }
         (deferred_inputs, deferred_digest)
+    }
+
+    pub fn prepare_first_layer_input<'a>(
+        &'a self,
+        vk: &StarkVerifyingKey<CoreSC>,
+        shard_proof: &ShardProof<CoreSC>,
+        is_first_shard: bool,
+    ) -> SP1RecursionWitnessValues<CoreSC> {
+        SP1RecursionWitnessValues {
+            vk: vk.clone(),
+            shard_proofs: vec![shard_proof.clone()],
+            is_complete: false,
+            is_first_shard,
+            vk_root: self.vk_root,
+            // assume no deferred_proofs for simplicity
+            reconstruct_deferred_digest: [BabyBear::from_canonical_u32(0); 8],
+        }
     }
 
     /// Generate the inputs for the first layer of recursive proofs.

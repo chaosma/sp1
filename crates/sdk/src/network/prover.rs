@@ -5,13 +5,13 @@ use crate::{
         client::NetworkClient,
         proto::network::{ProofMode, ProofStatus},
     },
-    NetworkProverBuilder, Prover, SP1Context, SP1ProofKind, SP1ProofWithPublicValues,
-    SP1ProvingKey, SP1VerifyingKey,
+    NetworkProverBuilder, Prover, SP1Context, SP1ProofCommonData, SP1ProofKind,
+    SP1ProofWithPublicValues, SP1ProvingKey, SP1VerifyingKey,
 };
 use anyhow::Result;
-use sp1_core_machine::io::SP1Stdin;
-use sp1_prover::{components::DefaultProverComponents, SP1Prover, SP1_CIRCUIT_VERSION};
-use sp1_stark::SP1ProverOpts;
+use sp1_core_machine::{io::SP1Stdin, SP1_CIRCUIT_VERSION};
+use sp1_prover::{components::DefaultProverComponents, CoreSC, SP1Prover};
+use sp1_stark::{SP1ProverOpts, ShardProof};
 
 use super::proto::network::GetProofStatusResponse;
 
@@ -178,6 +178,16 @@ impl Prover<DefaultProverComponents> for NetworkProver {
     ) -> Result<SP1ProofWithPublicValues> {
         warn_if_not_default(&opts.sp1_prover_opts, &context);
         block_on(self.prove(&pk.elf, stdin, kind.into(), opts.timeout))
+    }
+
+    fn prove_shard<'a>(
+        &'a self,
+        _pk: &SP1ProvingKey,
+        _stdin: SP1Stdin,
+        _opts: ProofOpts,
+        _context: SP1Context<'a>,
+    ) -> Result<(SP1ProofCommonData, Vec<ShardProof<CoreSC>>)> {
+        unimplemented!()
     }
 }
 

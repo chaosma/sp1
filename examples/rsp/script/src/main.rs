@@ -1,21 +1,27 @@
 use alloy_primitives::B256;
+use anyhow::{anyhow, Result};
+use bincode;
 use clap::Parser;
 use rsp_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
+use sp1_prover::{components::DefaultProverComponents, RecursionInput, SP1Prover};
+use sp1_sdk::{
+    action::compress_all_proofs, SP1Proof, SP1ProofCommonData, SP1ProofWithPublicValues,
+};
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 use std::path::PathBuf;
 
 use sp1_sdk::{include_elf, utils, ProverClient, SP1Stdin};
 
+const PREFIX: &str = "./proofs/";
+
 #[derive(Parser, Debug)]
 struct Args {
-    /// Whether or not to generate a proof.
     #[arg(long, default_value_t = false)]
     prove: bool,
     #[arg(long, default_value_t = false)]
     compress: bool,
-    #[arg(long, default_value_t = false)]
-    plonk: bool,
-    #[arg(long, default_value_t = false)]
-    groth16: bool,
 }
 
 fn load_input_from_cache(chain_id: u64, block_number: u64) -> ClientExecutorInput {
@@ -26,7 +32,43 @@ fn load_input_from_cache(chain_id: u64, block_number: u64) -> ClientExecutorInpu
     client_input
 }
 
+fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
+    let common_path = Path::new(PREFIX).join("common_data.bin");
+    let mut common_file = File::open(&common_path)?;
+    let mut common_serialized = Vec::new();
+    common_file.read_to_end(&mut common_serialized)?;
+    let common_data: SP1ProofCommonData = bincode::deserialize(&common_serialized)?;
+    // Load ShardProofs from proof_0.bin, proof_1.bin, etc.
+    let mut shard_proofs = Vec::new();
+    let mut index = 0;
+    loop {
+        let shard_path = Path::new(PREFIX).join(format!("proof_{}.bin", index));
+        if !shard_path.exists() {
+            break; // Stop when proof_{index}.bin is not found
+        }
+        let proof = RecursionInput::load(shard_path)?;
+        let shard_proof = match proof {
+            RecursionInput::Single { vk: _, proof, .. } => proof, // Extract proof, ignore vk
+            RecursionInput::Double { .. } => {
+                return Err(anyhow!("Expected Single RecursionInput, found Double"));
+            }
+        };
+        shard_proofs.push(shard_proof);
+        index += 1;
+    }
+
+    Ok(SP1ProofWithPublicValues {
+        proof: SP1Proof::Core(shard_proofs),
+        stdin: common_data.stdin,
+        public_values: common_data.public_values,
+        sp1_version: common_data.sp1_version,
+    })
+}
+
 fn main() {
+    // this is the total number of shard_proofs to be compressed
+    let num_proofs = 21;
+
     // Initialize the logger.
     utils::setup_logger();
 
@@ -59,33 +101,33 @@ fn main() {
     let block_hash = public_values.read::<B256>();
     println!("success: block_hash={block_hash}");
 
-    // If the `prove` argument was passed in, actually generate the proof.
-    // It is strongly recommended you use the network prover given the size of these programs.
     if args.prove {
-        println!("[hehe0] Starting shard proof generation.");
-        let proof = client.prove(&pk, stdin).run().expect("Proving should work.");
-        println!("Proof generation finished.");
+        println!("Starting shard proof generation.");
+        client.prove(&pk, stdin).run_shard_proof().expect("Proving should work.");
+        println!("shard proof generation finished.");
 
-        client.verify(&proof, &vk).expect("[hehe0] proof verification should succeed");
+        println!("loading proofs...");
+        let proof = load_shard_proofs().unwrap();
+        client.verify(&proof, &vk).unwrap();
+        println!("shard proof verification finished.");
     } else if args.compress {
-        println!("[hehe1] Starting compress proof generation.");
-        let proof = client.prove(&pk, stdin).compressed().run().expect("Proving should work.");
+        println!("Starting compress proof generation.");
+        compress_all_proofs(num_proofs).unwrap();
         println!("Proof generation finished.");
+        let prover = SP1Prover::<DefaultProverComponents>::new();
 
-        client.verify(&proof, &vk).expect("[hehe1] proof verification should succeed");
-    } else if args.plonk {
-        println!("[hehe2] Starting plonk proof generation.");
-        let proof = client.prove(&pk, stdin).plonk().run().expect("Proving should work.");
-        println!("Proof generation finished.");
-
-        client.verify(&proof, &vk).expect("[hehe2] proof verification should succeed");
-    } else if args.groth16 {
-        println!("[hehe3] Starting groth16 proof generation.");
-        let proof = client.prove(&pk, stdin).groth16().run().expect("Proving should work.");
-        println!("Proof generation finished.");
-
-        client.verify(&proof, &vk).expect("[hehe3] proof verification should succeed");
+        let final_path = Path::new(PREFIX).join("reduced_final.bin");
+        let input = RecursionInput::load(final_path).unwrap();
+        let common_path = Path::new(PREFIX).join("common_data.bin");
+        let mut common_file = File::open(&common_path).unwrap();
+        let mut common_serialized = Vec::new();
+        common_file.read_to_end(&mut common_serialized).unwrap();
+        let common_data: SP1ProofCommonData = bincode::deserialize(&common_serialized).unwrap();
+        prover.verify_final_compressed(vk, input, common_data.public_values).unwrap();
+        println!("Verify final proof finished");
     } else {
         panic!("not supported");
     }
+
+    println!("successfully generated and verified proof for the program!")
 }

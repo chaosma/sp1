@@ -1,12 +1,12 @@
 use anyhow::Result;
 use sp1_core_executor::SP1Context;
 use sp1_core_machine::io::SP1Stdin;
-use sp1_prover::{components::DefaultProverComponents, SP1Prover};
-use sp1_stark::MachineProver;
+use sp1_prover::{components::DefaultProverComponents, CoreSC, SP1Prover};
+use sp1_stark::{MachineProver, ShardProof};
 
 use crate::{
-    install::try_install_circuit_artifacts, provers::ProofOpts, Prover, SP1Proof, SP1ProofKind,
-    SP1ProofWithPublicValues, SP1ProvingKey, SP1VerifyingKey,
+    install::try_install_circuit_artifacts, provers::ProofOpts, Prover, SP1Proof,
+    SP1ProofCommonData, SP1ProofKind, SP1ProofWithPublicValues, SP1ProvingKey, SP1VerifyingKey,
 };
 
 use super::ProverType;
@@ -52,9 +52,8 @@ impl Prover<DefaultProverComponents> for CpuProver {
         kind: SP1ProofKind,
     ) -> Result<SP1ProofWithPublicValues> {
         use std::env;
-        let compress_only = env::var("COMPRESS_ONLY")
-            .map(|val| val.to_lowercase() == "true")
-            .unwrap_or(false);
+        let compress_only =
+            env::var("COMPRESS_ONLY").map(|val| val.to_lowercase() == "true").unwrap_or(false);
 
         let proof = if !compress_only {
             use bincode;
@@ -154,6 +153,31 @@ impl Prover<DefaultProverComponents> for CpuProver {
         }
 
         unreachable!()
+    }
+
+    fn prove_shard<'a>(
+        &'a self,
+        pk: &SP1ProvingKey,
+        stdin: SP1Stdin,
+        opts: ProofOpts,
+        context: SP1Context<'a>,
+    ) -> Result<(SP1ProofCommonData, Vec<ShardProof<CoreSC>>)> {
+        // Generate the core proof.
+        let program = self.prover.get_program(&pk.elf).unwrap();
+        let pk_d = self.prover.core_prover.pk_to_device(&pk.pk);
+
+        let proof: sp1_prover::SP1ProofWithMetadata<sp1_prover::SP1CoreProofData> =
+            self.prover.prove_core(&pk_d, program, &stdin, opts.sp1_prover_opts, context)?;
+
+        Ok((
+            SP1ProofCommonData {
+                stdin: proof.stdin,
+                public_values: proof.public_values,
+                sp1_version: self.version().to_string(),
+                vk: pk.vk.vk.clone(),
+            },
+            proof.proof.0,
+        ))
     }
 }
 

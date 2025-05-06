@@ -408,6 +408,40 @@ impl MachineRecord for ExecutionRecord {
         self.cpu_local_memory_access.append(&mut other.cpu_local_memory_access);
     }
 
+    fn register_nonces_no_opt(&mut self) {
+        self.add_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;
+        });
+
+        self.sub_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = (self.add_events.len() + i) as u32;
+        });
+
+        self.mul_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;
+        });
+
+        self.bitwise_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;
+        });
+
+        self.shift_left_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;
+        });
+
+        self.shift_right_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;
+        });
+
+        self.divrem_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;
+        });
+
+        self.lt_events.iter().enumerate().for_each(|(i, event)| {
+            self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;
+        });
+    }
+
     fn register_nonces(&mut self, _opts: &Self::Config) {
         self.add_events.iter().enumerate().for_each(|(i, event)| {
             self.nonce_lookup[event.lookup_id.0 as usize] = i as u32;

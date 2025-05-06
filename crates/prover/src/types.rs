@@ -131,6 +131,39 @@ pub struct SP1ProofWithMetadata<P: Clone> {
     pub cycles: u64,
 }
 
+/// Input for recursion prover
+#[derive(Serialize, Deserialize, Clone)]
+pub enum RecursionInput {
+    // first layer input from core or output of recursion prover
+    Single { vk: StarkVerifyingKey<CoreSC>, proof: ShardProof<CoreSC>, is_first_shard: bool },
+    // intermediate layer input of recursion prover
+    Double { vks_and_proofs: [(StarkVerifyingKey<InnerSC>, ShardProof<InnerSC>); 2] },
+}
+
+impl RecursionInput {
+    pub fn save(&self, path: impl AsRef<Path>) -> Result<()> {
+        bincode::serialize_into(
+            File::create(&path).map_err(|e| anyhow::anyhow!("Failed to open file: {}", e))?,
+            self,
+        )
+        .map_err(|e| anyhow::anyhow!("Failed to serialize: {}", e))?;
+        Ok(())
+    }
+
+    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
+        let file = File::open(&path).map_err(|e| anyhow::anyhow!("Failed to open file: {}", e))?;
+        let input = bincode::deserialize_from(file)
+            .map_err(|e| anyhow::anyhow!("Failed to deserialize: {}", e))?;
+        Ok(input)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SP1ProofMetadata {
+    pub stdin: SP1Stdin,
+    pub public_values: SP1PublicValues,
+}
+
 impl<P: Serialize + DeserializeOwned + Clone> SP1ProofWithMetadata<P> {
     pub fn save(&self, path: impl AsRef<Path>) -> Result<()> {
         bincode::serialize_into(File::create(path).expect("failed to open file"), self)
