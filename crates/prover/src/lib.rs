@@ -408,19 +408,27 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             }
         };
 
+        let execute_span =
+            tracing::debug_span!("[phase2] execute recursion/compression program").entered();
         let mut runtime = RecursionRuntime::<Val<InnerSC>, Challenge<InnerSC>, _>::new(
             program.clone(),
             self.compress_prover.config().perm.clone(),
         );
         runtime.witness_stream = witness_stream.into();
         runtime.run().map_err(|e| SP1RecursionProverError::RuntimeError(e.to_string())).unwrap();
+        execute_span.exit();
+
         let record = runtime.record;
 
         // Generate the dependencies.
         let mut records = vec![record];
+        let dependency_span = tracing::debug_span!("[phase3a] generate dependency").entered();
         self.compress_prover.machine().generate_dependencies_no_opt(&mut records, None);
+        dependency_span.exit();
 
+        let trace_span = tracing::debug_span!("[phase3b] generate trace").entered();
         let traces = self.compress_prover.generate_traces(&records[0]);
+        trace_span.exit();
 
         // Get the keys.
         let (pk, vk) = self.compress_prover.setup(&program);
@@ -1016,7 +1024,8 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                 let misses = self.recursion_cache_misses.fetch_add(1, Ordering::Relaxed);
                 tracing::debug!("hehe5 core cache miss, misses: {}", misses);
                 // Get the operations.
-                let builder_span = tracing::debug_span!("build recursion program").entered();
+                let builder_span =
+                    tracing::debug_span!("[1-phase1a] build recursion program").entered();
                 let mut builder = Builder::<InnerConfig>::default();
 
                 let input = input.read(&mut builder);
@@ -1025,7 +1034,8 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                 builder_span.exit();
 
                 // Compile the program.
-                let compiler_span = tracing::debug_span!("compile recursion program").entered();
+                let compiler_span =
+                    tracing::debug_span!("[1-phase1b] compile recursion program").entered();
                 let mut compiler = AsmCompiler::<InnerConfig>::default();
                 let mut program = compiler.compile(operations);
                 if let Some(recursion_shape_config) = &self.recursion_shape_config {
@@ -1359,7 +1369,7 @@ pub fn compress_program_from_input<C: SP1ProverComponents>(
     vk_verification: bool,
     input: &SP1CompressWithVKeyWitnessValues<BabyBearPoseidon2>,
 ) -> RecursionProgram<BabyBear> {
-    let builder_span = tracing::debug_span!("build compress program").entered();
+    let builder_span = tracing::debug_span!("[2-phase1a] build compress program").entered();
     let mut builder = Builder::<InnerConfig>::default();
     // read the input.
     let input = input.read(&mut builder);
@@ -1375,7 +1385,7 @@ pub fn compress_program_from_input<C: SP1ProverComponents>(
     builder_span.exit();
 
     // Compile the program.
-    let compiler_span = tracing::debug_span!("compile compress program").entered();
+    let compiler_span = tracing::debug_span!("[2-phase1b] compile compress program").entered();
     let mut compiler = AsmCompiler::<InnerConfig>::default();
     let mut program = compiler.compile(operations);
     if let Some(config) = config {
