@@ -291,14 +291,7 @@ pub fn run_recursion_first_layer(
     };
 
     let debug_info = format!("hehe5, first_layer, idx={}", index);
-    let reduced_proof = prover.compress_proofs(&recursion_input, false, &debug_info)?;
-    let recursion_input = RecursionInput::Single {
-        vk: reduced_proof.vk,
-        proof: reduced_proof.proof,
-        is_first_shard: false, // not used
-    };
-    let proof_path = Path::new(PREFIX).join(format!("reduced_0_{}.bin", index));
-    recursion_input.save(proof_path)?;
+    prover.compress_proofs(&recursion_input, false, &debug_info)?;
     Ok(())
 }
 
@@ -307,7 +300,7 @@ pub fn run_recursion_two_to_one(
     prover: &SP1Prover<DefaultProverComponents>,
     path1: impl AsRef<Path>,
     path2: impl AsRef<Path>,
-    out_path: impl AsRef<Path>,
+    _out_path: impl AsRef<Path>,
     is_complete: bool,
 ) -> Result<()> {
     let path1 = path1.as_ref();
@@ -335,15 +328,8 @@ pub fn run_recursion_two_to_one(
 
     // Compress the two proofs into one
     let debug_info = format!("hehe5, intermediate layers, path1={:?}, path2={:?}", path1, path2);
-    let reduced_proof = prover.compress_proofs(&recursion_input, is_complete, &debug_info)?;
+    let _ = prover.compress_proofs(&recursion_input, is_complete, &debug_info)?;
 
-    // Save the combined proof
-    let recursion_input = RecursionInput::Single {
-        vk: reduced_proof.vk,
-        proof: reduced_proof.proof,
-        is_first_shard: false,
-    };
-    recursion_input.save(&out_path)?;
     Ok(())
 }
 

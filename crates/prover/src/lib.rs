@@ -384,7 +384,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         input: &RecursionInput,
         is_complete: bool,
         debug_info: &str,
-    ) -> Result<SP1ReduceProof<InnerSC>, SP1RecursionProverError> {
+    ) -> Result<(), SP1RecursionProverError> {
         let mut witness_stream = Vec::new();
         let (witness_stream, program) = match input {
             RecursionInput::Single { vk, proof, is_first_shard } => {
@@ -427,41 +427,10 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         dependency_span.exit();
 
         let trace_span = tracing::debug_span!("[phase3b] generate trace").entered();
-        let traces = self.compress_prover.generate_traces(&records[0]);
+        let _ = self.compress_prover.generate_traces(&records[0]);
         trace_span.exit();
 
-        // Get the keys.
-        let (pk, vk) = self.compress_prover.setup(&program);
-
-        // Observe the proving key.
-        let mut challenger = self.compress_prover.config().challenger();
-        pk.observe_into(&mut challenger);
-
-        // [Debug]
-        //        *self.compress_prover.debug_constraints(
-        //            &self.compress_prover.pk_to_host(&pk),
-        //            vec![records[0].clone()],
-        //            &mut challenger.clone(),
-        //        );
-
-        // Commit to the record and traces.
-        let data = self.compress_prover.commit(&records[0], traces);
-
-        // Generate the proof.
-        let proof = tracing::debug_span!("open")
-            .in_scope(|| self.compress_prover.open(&pk, data, &mut challenger).unwrap());
-
-        // [Debug]
-        self.compress_prover
-            .machine()
-            .verify(
-                &vk,
-                &sp1_stark::MachineProof { shard_proofs: vec![proof.clone()] },
-                &mut self.compress_prover.config().challenger(),
-            )
-            .unwrap();
-
-        Ok(SP1ReduceProof { vk, proof })
+        Ok(())
     }
 
     /// Reduce shards proofs to a single shard proof using the recursion prover.
