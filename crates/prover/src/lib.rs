@@ -989,7 +989,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         cache
             .get_or_insert(input.shape(), || {
                 let misses = self.recursion_cache_misses.fetch_add(1, Ordering::Relaxed);
-                println!("[recursion_program] core cache miss, misses: {}", misses);
+                println!("[recursion_program] core cache miss, misses: === {} ===", misses);
                 // Get the operations.
                 let builder_span =
                     tracing::debug_span!("[1-phase1a] build recursion program").entered();
