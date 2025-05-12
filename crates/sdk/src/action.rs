@@ -290,7 +290,7 @@ pub fn run_recursion_first_layer(
         }
     };
 
-    let debug_info = format!("hehe5, first_layer, idx={}", index);
+    let debug_info = format!("[first_layer] index ={}", index);
     prover.compress_proofs(&recursion_input, false, &debug_info)?;
     Ok(())
 }
@@ -327,7 +327,7 @@ pub fn run_recursion_two_to_one(
     let recursion_input = RecursionInput::Double { vks_and_proofs: [(vk1, proof1), (vk2, proof2)] };
 
     // Compress the two proofs into one
-    let debug_info = format!("hehe5, intermediate layers, path1={:?}, path2={:?}", path1, path2);
+    let debug_info = format!("[two-to-one] path1={:?}, path2={:?}", path1, path2);
     let _ = prover.compress_proofs(&recursion_input, is_complete, &debug_info)?;
 
     Ok(())
