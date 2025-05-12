@@ -24,7 +24,7 @@ const PREFIX: &str = "./proofs/";
 struct Args {
     #[arg(long, default_value = "127.0.0.1:3000")]
     address: String,
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = true)]
     single_prover: bool,
 }
 
