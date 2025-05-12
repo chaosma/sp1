@@ -16,6 +16,11 @@ rsp-client-executor = { git = "https://github.com/succinctlabs/rsp/", rev = "364
 sp1-sdk = { path = "../../../crates/sdk" }
 sp1-prover = { path = "../../../crates/prover" }
 
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+log = "0.4"
+serde = { workspace = true, features = ["derive"] }
+
 [build-dependencies]
 sp1-build = { path = "../../../crates/build" }
 
