@@ -11,12 +11,11 @@ use axum::{
     routing::post,
     Router,
 };
-use nix::sys::wait::waitpid;
-use nix::unistd::{fork, ForkResult};
 use serde::Deserialize;
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
+use std::thread;
 use tokio::net::TcpListener;
 
 const PREFIX: &str = "./proofs/";
@@ -25,6 +24,8 @@ const PREFIX: &str = "./proofs/";
 struct Args {
     #[arg(long, default_value = "127.0.0.1:3000")]
     address: String,
+    #[arg(long, default_value_t = false)]
+    single_prover: bool,
 }
 
 #[derive(Deserialize)]
@@ -39,47 +40,44 @@ async fn main() {
     let args = Args::parse();
     fs::create_dir_all(PREFIX).expect("Failed to create proofs directory");
 
-    let prover = Arc::new(SP1Prover::<DefaultProverComponents>::new());
+    let prover = if args.single_prover {
+        Arc::new(Some(SP1Prover::<DefaultProverComponents>::new()))
+    } else {
+        Arc::new(None)
+    };
     let app = Router::new()
         .route("/first-layer/:index", post(first_layer))
         .route("/two-to-one", post(two_to_one))
         .with_state(prover);
     let listener = TcpListener::bind(&args.address).await.expect("Failed to bind to address");
-    println!("Server running at {}", args.address);
+    println!("Server running at {}, single_prover: {}", args.address, args.single_prover);
     axum::serve(listener, app).await.expect("Server failed");
 }
 
 async fn first_layer(
     AxumPath(index): AxumPath<usize>,
-    prover: axum::extract::State<Arc<SP1Prover<DefaultProverComponents>>>,
+    prover: axum::extract::State<Arc<Option<SP1Prover<DefaultProverComponents>>>>,
 ) -> impl IntoResponse {
     let prover = prover.clone();
-    match unsafe { fork() }.expect("Fork failed") {
-        ForkResult::Child => {
-            let result = run_recursion_first_layer(&prover, index);
-            std::process::exit(match result {
-                Ok(_) => 0,
-                Err(e) => {
-                    eprintln!("Child error: {}", e);
-                    1
-                }
-            });
-        }
-        ForkResult::Parent { child } => match waitpid(child, None) {
-            Ok(nix::sys::wait::WaitStatus::Exited(_, 0)) => (StatusCode::OK, "ok".to_string()),
-            Ok(status) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Forked process failed with status: {:?}", status),
-            ),
-            Err(e) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to wait for child: {}", e))
-            }
-        },
+    let result = thread::spawn(move || {
+        let prover = if prover.as_ref().is_some() {
+            prover.as_ref().as_ref().unwrap()
+        } else {
+            &SP1Prover::<DefaultProverComponents>::new()
+        };
+        run_recursion_first_layer(prover, index).map_err(|e| format!("Error: {}", e))
+    })
+    .join();
+
+    match result {
+        Ok(Ok(_)) => (StatusCode::OK, "ok".to_string()),
+        Ok(Err(e)) => (StatusCode::INTERNAL_SERVER_ERROR, e),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Thread panicked: {:?}", e)),
     }
 }
 
 async fn two_to_one(
-    prover: axum::extract::State<Arc<SP1Prover<DefaultProverComponents>>>,
+    prover: axum::extract::State<Arc<Option<SP1Prover<DefaultProverComponents>>>>,
     Json(req): Json<TwoToOneRequest>,
 ) -> impl IntoResponse {
     let path1 = Path::new(PREFIX).join(format!("reduced_0_{}.bin", req.index1));
@@ -92,26 +90,21 @@ async fn two_to_one(
     }
 
     let prover = prover.clone();
-    match unsafe { fork() }.expect("Fork failed") {
-        ForkResult::Child => {
-            let result = run_recursion_two_to_one(&prover, &path1, &path2, &output_path, false);
-            std::process::exit(match result {
-                Ok(_) => 0,
-                Err(e) => {
-                    eprintln!("Child error: {}", e);
-                    1
-                }
-            });
-        }
-        ForkResult::Parent { child } => match waitpid(child, None) {
-            Ok(nix::sys::wait::WaitStatus::Exited(_, 0)) => (StatusCode::OK, "ok".to_string()),
-            Ok(status) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Forked process failed with status: {:?}", status),
-            ),
-            Err(e) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to wait for child: {}", e))
-            }
-        },
+    let result = thread::spawn(move || {
+        let prover = if prover.as_ref().is_some() {
+            prover.as_ref().as_ref().unwrap()
+        } else {
+            &SP1Prover::<DefaultProverComponents>::new()
+        };
+        let is_final = false;
+        run_recursion_two_to_one(prover, &path1, &path2, &output_path, is_final)
+            .map_err(|e| format!("Error: {}", e))
+    })
+    .join();
+
+    match result {
+        Ok(Ok(_)) => (StatusCode::OK, "ok".to_string()),
+        Ok(Err(e)) => (StatusCode::INTERNAL_SERVER_ERROR, e),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Thread panicked: {:?}", e)),
     }
 }
