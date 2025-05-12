@@ -1,28 +1,26 @@
 use clap::Parser;
+use nix::{
+    sys::wait::{waitpid, WaitPidFlag},
+    unistd::{fork, ForkResult},
+};
+use serde::Deserialize;
 use sp1_prover::{components::DefaultProverComponents, SP1Prover};
 use sp1_sdk::action::{run_recursion_first_layer, run_recursion_two_to_one};
-
-use sp1_sdk::utils;
-
-use axum::{
-    extract::{Json, Path as AxumPath},
-    http::StatusCode,
-    response::IntoResponse,
-    routing::post,
-    Router,
+use std::{
+    fs,
+    io::{Read, Write},
+    net::{TcpListener, TcpStream},
+    path::Path,
+    process,
+    sync::Arc,
+    time::Duration,
 };
-use nix::sys::wait::waitpid;
-use nix::unistd::{fork, ForkResult};
-use serde::Deserialize;
-use std::fs;
-use std::path::Path;
-use std::sync::Arc;
-use tokio::net::TcpListener;
 
 const PREFIX: &str = "./proofs/";
 
 #[derive(Parser, Debug)]
 struct Args {
+    /// listening address, e.g. 0.0.0.0:3000
     #[arg(long, default_value = "127.0.0.1:3000")]
     address: String,
 }
@@ -33,85 +31,119 @@ struct TwoToOneRequest {
     index2: usize,
 }
 
-#[tokio::main]
-async fn main() {
-    utils::setup_logger();
+fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    fs::create_dir_all(PREFIX).expect("Failed to create proofs directory");
+    fs::create_dir_all(PREFIX)?;
 
-    let prover = Arc::new(SP1Prover::<DefaultProverComponents>::new());
-    let app = Router::new()
-        .route("/first-layer/:index", post(first_layer))
-        .route("/two-to-one", post(two_to_one))
-        .with_state(prover);
-    let listener = TcpListener::bind(&args.address).await.expect("Failed to bind to address");
-    println!("Server running at {}", args.address);
-    axum::serve(listener, app).await.expect("Server failed");
-}
+    let listener = TcpListener::bind(&args.address)?;
+    println!("parent: bound to {}", args.address);
 
-async fn first_layer(
-    AxumPath(index): AxumPath<usize>,
-    prover: axum::extract::State<Arc<SP1Prover<DefaultProverComponents>>>,
-) -> impl IntoResponse {
-    let prover = prover.clone();
-    match unsafe { fork() }.expect("Fork failed") {
-        ForkResult::Child => {
-            let result = run_recursion_first_layer(&prover, index);
-            std::process::exit(match result {
-                Ok(_) => 0,
-                Err(e) => {
-                    eprintln!("Child error: {}", e);
-                    1
-                }
-            });
-        }
-        ForkResult::Parent { child } => match waitpid(child, None) {
-            Ok(nix::sys::wait::WaitStatus::Exited(_, 0)) => (StatusCode::OK, "ok".to_string()),
-            Ok(status) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Forked process failed with status: {:?}", status),
-            ),
-            Err(e) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to wait for child: {}", e))
+    let workers = num_cpus::get();
+    println!("parent: forking {workers} workers");
+
+    for _ in 0..workers {
+        match unsafe { fork()? } {
+            ForkResult::Parent { .. } => {}
+            ForkResult::Child => {
+                // Heavy initialisation AFTER fork -- one per worker
+                let prover = Arc::new(SP1Prover::<DefaultProverComponents>::new());
+                println!("worker {} ready", process::id());
+
+                worker_loop(listener.try_clone()?, prover)?;
+                process::exit(0);
             }
-        },
-    }
-}
-
-async fn two_to_one(
-    prover: axum::extract::State<Arc<SP1Prover<DefaultProverComponents>>>,
-    Json(req): Json<TwoToOneRequest>,
-) -> impl IntoResponse {
-    let path1 = Path::new(PREFIX).join(format!("reduced_0_{}.bin", req.index1));
-    let path2 = Path::new(PREFIX).join(format!("reduced_0_{}.bin", req.index2));
-    let output_filename = format!("reduced_1_{}.bin", req.index1 / 2);
-    let output_path = Path::new(PREFIX).join(&output_filename);
-
-    if !path1.exists() || !path2.exists() {
-        return (StatusCode::BAD_REQUEST, format!("Proof files not found: {:?}", [path1, path2]));
-    }
-
-    let prover = prover.clone();
-    match unsafe { fork() }.expect("Fork failed") {
-        ForkResult::Child => {
-            let result = run_recursion_two_to_one(&prover, &path1, &path2, &output_path, false);
-            std::process::exit(match result {
-                Ok(_) => 0,
-                Err(e) => {
-                    eprintln!("Child error: {}", e);
-                    1
-                }
-            });
         }
-        ForkResult::Parent { child } => match waitpid(child, None) {
-            Ok(nix::sys::wait::WaitStatus::Exited(_, 0)) => (StatusCode::OK, "ok".to_string()),
-            Ok(status) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Forked process failed with status: {:?}", status),
-            ),
-            Err(e) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to wait for child: {}", e))
-            }
-        },
+    }
+
+    // Parent: reap zombies, nothing else
+    loop {
+        let _ = waitpid(None, Some(WaitPidFlag::WNOHANG));
+        std::thread::sleep(Duration::from_secs(1));
     }
 }
+
+// ======================================================================
+//                      Worker code
+// ======================================================================
+fn worker_loop(
+    listener: TcpListener,
+    prover: Arc<SP1Prover<DefaultProverComponents>>,
+) -> anyhow::Result<()> {
+    println!("worker pid {} ready", process::id());
+
+    loop {
+        let (mut stream, addr) = listener.accept()?; // blocking
+        stream.set_read_timeout(Some(Duration::from_secs(5))).ok();
+        if let Err(e) = handle_connection(&mut stream, &prover) {
+            eprintln!("worker {} – {} – {e}", process::id(), addr);
+        }
+    }
+}
+
+// ---------------------------- request handling -------------------------
+fn handle_connection(
+    stream: &mut TcpStream,
+    prover: &Arc<SP1Prover<DefaultProverComponents>>,
+) -> anyhow::Result<()> {
+    let mut buf = [0u8; 8192];
+    let n = stream.read(&mut buf)?;
+    if n == 0 {
+        return Ok(());
+    }
+
+    // --- minimal HTTP parsing -----------------------------------------
+    let mut headers = [httparse::EMPTY_HEADER; 16];
+    let mut req = httparse::Request::new(&mut headers);
+    let parsed = req.parse(&buf[..n])?;
+    if !parsed.is_complete() {
+        return write_resp(stream, 400, "bad request");
+    }
+    if req.method != Some("POST") {
+        return write_resp(stream, 405, "POST only");
+    }
+    let path = req.path.unwrap_or("");
+
+    let body = &buf[parsed.unwrap()..n];
+
+    // --- routing -------------------------------------------------------
+    if let Some(idx) = path.strip_prefix("/first-layer/") {
+        let index: usize = idx.parse().unwrap_or(usize::MAX);
+        println!("worker {} → first-layer idx={index}", process::id());
+
+        match run_recursion_first_layer(prover, index) {
+            Ok(_) => write_resp(stream, 200, "ok"),
+            Err(e) => write_resp(stream, 500, &format!("error: {e}")),
+        }
+    } else if path == "/two-to-one" {
+        let req_json: TwoToOneRequest = serde_json::from_slice(body)?;
+        let p1 = Path::new(PREFIX).join(format!("reduced_0_{}.bin", req_json.index1));
+        let p2 = Path::new(PREFIX).join(format!("reduced_0_{}.bin", req_json.index2));
+        let out = Path::new(PREFIX).join(format!("reduced_1_{}.bin", req_json.index1 / 2));
+
+        if !p1.exists() || !p2.exists() {
+            return write_resp(stream, 400, "missing proofs");
+        }
+
+        println!("worker {} → 2-to-1 {} {}", process::id(), req_json.index1, req_json.index2);
+
+        match run_recursion_two_to_one(prover, &p1, &p2, &out, false) {
+            Ok(_) => write_resp(stream, 200, "ok"),
+            Err(e) => write_resp(stream, 500, &format!("error: {e}")),
+        }
+    } else {
+        write_resp(stream, 404, "not found")
+    }
+}
+
+// ---------------------------- helpers ----------------------------------
+fn write_resp(stream: &mut TcpStream, code: u16, msg: &str) -> anyhow::Result<()> {
+    let body = msg.as_bytes();
+    write!(
+        stream,
+        "HTTP/1.1 {code}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        body.len()
+    )?;
+    stream.write_all(body)?;
+    Ok(())
+}
+
