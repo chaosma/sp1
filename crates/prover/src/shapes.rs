@@ -397,7 +397,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         match shape {
             SP1CompressProgramShape::Recursion(shape) => {
                 let input = SP1RecursionWitnessValues::dummy(self.core_prover.machine(), &shape);
-                self.recursion_program(&input)
+                self.recursion_program(&input, "")
             }
             SP1CompressProgramShape::Deferred(shape) => {
                 let input = SP1DeferredWitnessValues::dummy(self.compress_prover.machine(), &shape);
