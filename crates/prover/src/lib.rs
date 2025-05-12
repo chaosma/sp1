@@ -391,8 +391,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                 let input = self.prepare_first_layer_input(&vk, &proof, *is_first_shard);
                 let mut witness_stream = Vec::new();
                 Witnessable::<InnerConfig>::write(&input, &mut witness_stream);
-                println!("{}", debug_info);
-                let program = self.recursion_program(&input);
+                let program = self.recursion_program(&input, debug_info);
                 (witness_stream, program)
             }
             RecursionInput::Double { vks_and_proofs } => {
@@ -513,7 +512,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
                                 SP1CircuitWitness::Core(input) => {
                                     let mut witness_stream = Vec::new();
                                     Witnessable::<InnerConfig>::write(&input, &mut witness_stream);
-                                    (self.recursion_program(&input), witness_stream)
+                                    (self.recursion_program(&input, ""), witness_stream)
                                 }
                                 SP1CircuitWitness::Deferred(input) => {
                                     let mut witness_stream = Vec::new();
@@ -982,14 +981,18 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
     pub fn recursion_program(
         &self,
         input: &SP1RecursionWitnessValues<CoreSC>,
+        debug_info: &str,
     ) -> Arc<RecursionProgram<BabyBear>> {
         let mut cache = self.recursion_programs.lock().unwrap_or_else(|e| e.into_inner());
         let shape = input.shape();
-        println!("[recursion_program] input_shape={:?}", &shape);
+        println!("{}: [recursion_program] input_shape={:?}", debug_info, &shape);
         cache
             .get_or_insert(input.shape(), || {
                 let misses = self.recursion_cache_misses.fetch_add(1, Ordering::Relaxed);
-                println!("[recursion_program] core cache miss, misses: === {} ===", misses);
+                println!(
+                    "{}: [recursion_program] core cache miss, misses: === {} ===",
+                    debug_info, misses
+                );
                 // Get the operations.
                 let builder_span =
                     tracing::debug_span!("[1-phase1a] build recursion program").entered();
