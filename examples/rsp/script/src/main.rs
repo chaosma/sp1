@@ -120,7 +120,6 @@ fn handle_connection(
 
     // Read remaining body if needed
     if initial_len < content_length {
-        let remaining = content_length - initial_len;
         let mut read_pos = initial_len;
         while read_pos < content_length {
             let read = stream.read(&mut body[read_pos..])?;
@@ -180,4 +179,3 @@ fn write_resp(stream: &mut TcpStream, code: u16, msg: &str) -> anyhow::Result<()
     stream.flush()?;
     Ok(())
 }
-
