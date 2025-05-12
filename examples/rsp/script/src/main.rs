@@ -73,26 +73,25 @@ fn worker_loop(
     println!("worker pid {} ready", process::id());
 
     loop {
-        let (mut stream, addr) = listener.accept()?; // blocking
-        stream.set_read_timeout(Some(Duration::from_secs(5))).ok();
+        let (mut stream, addr) = listener.accept()?;
+        stream.set_read_timeout(Some(Duration::from_secs(30)))?;
         if let Err(e) = handle_connection(&mut stream, &prover) {
-            eprintln!("worker {} – {} – {e}", process::id(), addr);
+            eprintln!("worker {} – {} – {}", process::id(), addr, e);
         }
     }
 }
 
-// ---------------------------- request handling -------------------------
 fn handle_connection(
     stream: &mut TcpStream,
     prover: &Arc<SP1Prover<DefaultProverComponents>>,
 ) -> anyhow::Result<()> {
-    let mut buf = [0u8; 8192];
+    let mut buf = vec![0u8; 8192];
     let n = stream.read(&mut buf)?;
     if n == 0 {
         return Ok(());
     }
 
-    // --- minimal HTTP parsing -----------------------------------------
+    // Parse HTTP request
     let mut headers = [httparse::EMPTY_HEADER; 16];
     let mut req = httparse::Request::new(&mut headers);
     let parsed = req.parse(&buf[..n])?;
@@ -104,19 +103,53 @@ fn handle_connection(
     }
     let path = req.path.unwrap_or("");
 
-    let body = &buf[parsed.unwrap()..n];
+    // Get Content-Length
+    let content_length = headers
+        .iter()
+        .find(|h| h.name.eq_ignore_ascii_case("Content-Length"))
+        .and_then(|h| std::str::from_utf8(h.value).ok())
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(0);
 
-    // --- routing -------------------------------------------------------
+    // Read body
+    let mut body = vec![0u8; content_length];
+    let header_len = parsed.unwrap();
+    let initial_body = &buf[header_len..n];
+    let initial_len = initial_body.len().min(content_length);
+    body[..initial_len].copy_from_slice(&initial_body[..initial_len]);
+
+    // Read remaining body if needed
+    if initial_len < content_length {
+        let remaining = content_length - initial_len;
+        let mut read_pos = initial_len;
+        while read_pos < content_length {
+            let read = stream.read(&mut body[read_pos..])?;
+            if read == 0 {
+                return write_resp(stream, 400, "incomplete body");
+            }
+            read_pos += read;
+        }
+    }
+
+    println!(
+        "worker {}: Received body (len={}): {}",
+        process::id(),
+        body.len(),
+        String::from_utf8_lossy(&body)
+    );
+
+    // Routing
     if let Some(idx) = path.strip_prefix("/first-layer/") {
         let index: usize = idx.parse().unwrap_or(usize::MAX);
-        println!("worker {} → first-layer idx={index}", process::id());
+        println!("worker {} → first-layer idx={}", process::id(), index);
 
         match run_recursion_first_layer(prover, index) {
             Ok(_) => write_resp(stream, 200, "ok"),
             Err(e) => write_resp(stream, 500, &format!("error: {e}")),
         }
     } else if path == "/two-to-one" {
-        let req_json: TwoToOneRequest = serde_json::from_slice(body)?;
+        let req_json: TwoToOneRequest = serde_json::from_slice(&body)
+            .map_err(|e| anyhow::anyhow!("JSON parse error: {}", e))?;
         let p1 = Path::new(PREFIX).join(format!("reduced_0_{}.bin", req_json.index1));
         let p2 = Path::new(PREFIX).join(format!("reduced_0_{}.bin", req_json.index2));
         let out = Path::new(PREFIX).join(format!("reduced_1_{}.bin", req_json.index1 / 2));
@@ -136,7 +169,6 @@ fn handle_connection(
     }
 }
 
-// ---------------------------- helpers ----------------------------------
 fn write_resp(stream: &mut TcpStream, code: u16, msg: &str) -> anyhow::Result<()> {
     let body = msg.as_bytes();
     write!(
@@ -145,5 +177,7 @@ fn write_resp(stream: &mut TcpStream, code: u16, msg: &str) -> anyhow::Result<()
         body.len()
     )?;
     stream.write_all(body)?;
+    stream.flush()?;
     Ok(())
 }
+
