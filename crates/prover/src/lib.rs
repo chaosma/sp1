@@ -983,15 +983,14 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         &self,
         input: &SP1RecursionWitnessValues<CoreSC>,
     ) -> Arc<RecursionProgram<BabyBear>> {
-        println!("getting recursion program: {:?}", input.shape());
+        println!("[recursion_program] getting recursion program: {:?}", input.shape());
         let mut cache = self.recursion_programs.lock().unwrap_or_else(|e| e.into_inner());
-        println!("inserting to cache");
         let shape = input.shape();
-        println!("hehe5, input_shape={:?}", &shape);
+        println!("[recursion_program] input_shape={:?}", &shape);
         cache
             .get_or_insert(input.shape(), || {
                 let misses = self.recursion_cache_misses.fetch_add(1, Ordering::Relaxed);
-                tracing::debug!("hehe5 core cache miss, misses: {}", misses);
+                println!("[recursion_program] core cache miss, misses: {}", misses);
                 // Get the operations.
                 let builder_span =
                     tracing::debug_span!("[1-phase1a] build recursion program").entered();
@@ -1023,13 +1022,13 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         input: &SP1CompressWithVKeyWitnessValues<InnerSC>,
     ) -> Arc<RecursionProgram<BabyBear>> {
         let shape = input.shape();
-        println!("hehe5, input_shape={:?}", &shape);
+        println!("[compress_program], input_shape={:?}", &shape);
         if self.recursion_shape_config.is_some() && !shape_tuning {
-            println!("hehe5, good, cache hit!");
+            println!("[compress_program], cache hit!");
             self.compress_programs.get(&input.shape()).map(Clone::clone).unwrap()
         } else {
             // Get the operations.
-            println!("hehe5, bad, cache miss!");
+            println!("compress_program], cache miss!");
             Arc::new(compress_program_from_input::<C>(
                 self.recursion_shape_config.as_ref(),
                 &self.compress_prover,

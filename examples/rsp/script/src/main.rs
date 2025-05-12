@@ -38,7 +38,8 @@ fn main() -> anyhow::Result<()> {
     let listener = TcpListener::bind(&args.address)?;
     println!("parent: bound to {}", args.address);
 
-    let workers = num_cpus::get();
+    // let workers = num_cpus::get();
+    let workers = 16;
     println!("parent: forking {workers} workers");
 
     for _ in 0..workers {
@@ -146,4 +147,3 @@ fn write_resp(stream: &mut TcpStream, code: u16, msg: &str) -> anyhow::Result<()
     stream.write_all(body)?;
     Ok(())
 }
-
