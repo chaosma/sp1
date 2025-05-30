@@ -282,14 +282,8 @@ pub fn run_recursion_first_layer(
     index: usize,
 ) -> Result<()> {
     let proof_path = Path::new(PREFIX).join(format!("proof_{}.bin", index));
-    let input = RecursionInput::load(&proof_path)?;
-    let recursion_input = match input {
-        RecursionInput::Single { .. } => input,
-        RecursionInput::Double { .. } => {
-            return Err(anyhow!("Expected Single RecursionInput"));
-        }
-    };
-
+    let is_first_shard = index == 0;
+    let recursion_input = RecursionInput::load(&proof_path, is_first_shard, true)?;
     let reduced_proof = prover.compress_proofs(&recursion_input, false)?;
     let recursion_input = RecursionInput::Single {
         vk: reduced_proof.vk,
@@ -312,8 +306,8 @@ pub fn run_recursion_two_to_one(
     let path1 = path1.as_ref();
     let path2 = path2.as_ref();
 
-    let input1 = RecursionInput::load(&path1)?;
-    let input2 = RecursionInput::load(&path2)?;
+    let input1 = RecursionInput::load(&path1, false, false)?;
+    let input2 = RecursionInput::load(&path2, false, false)?;
 
     // Ensure both inputs are Single (containing InnerSC proofs)
     let (vk1, proof1) = match input1 {

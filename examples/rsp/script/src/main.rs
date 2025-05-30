@@ -22,6 +22,12 @@ struct Args {
     prove: bool,
     #[arg(long, default_value_t = false)]
     compress: bool,
+
+    // only for --convert legacy output
+    #[clap(long)]
+    input: Option<PathBuf>,
+    #[clap(long)]
+    shard: bool,
 }
 
 fn load_input_from_cache(chain_id: u64, block_number: u64) -> ClientExecutorInput {
@@ -125,6 +131,22 @@ fn main() {
         let common_data: SP1ProofCommonData = bincode::deserialize(&common_serialized).unwrap();
         prover.verify_final_compressed(vk, input, common_data.public_values).unwrap();
         println!("Verify final proof finished");
+    } else if args.convert {
+        let src = args.input.expect("pass --input <file> with --convert");
+        let mut file = File::open(&src).expect(&format!("cannot open {}", src.display()));
+
+        let input: RecursionInput = bincode::deserialize_from(&mut file)
+            .expect("Failed to deserialize legacy RecursionInput");
+
+        let out_name = if args.shard { "shard_vk.bin" } else { "reduced_vk.bin" };
+        let mut out = File::create(out_name).expect(&format!("cannot create {}", out_name));
+
+        if let RecursionInput::Single { vk, .. } = input {
+            bincode::serialize_into(&mut out, &vk).expect("Failed to write vk");
+            println!("wrote {}", out_name);
+        } else {
+            eprintln!("convert: legacy file contains a Double variant – aborting");
+        }
     } else {
         panic!("not supported");
     }
