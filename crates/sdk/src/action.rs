@@ -166,8 +166,8 @@ impl<'a> Prove<'a> {
         let context = context_builder.build();
 
         // Remove proofs folder and recreate it
-        fs::remove_dir_all(PREFIX).unwrap_or(()); // Ignore error if directory doesn't exist
-        fs::create_dir_all(PREFIX)?;
+        // fs::remove_dir_all(PREFIX).unwrap_or(()); // Ignore error if directory doesn't exist
+        // fs::create_dir_all(PREFIX)?;
         let (common_data, proofs) = prover.prove_shard(pk, stdin, proof_opts, context)?;
         let common_path = Path::new(PREFIX).join("common_data.bin");
         let common_serialized = bincode::serialize(&common_data)?;

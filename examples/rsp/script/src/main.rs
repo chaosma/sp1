@@ -22,6 +22,8 @@ struct Args {
     prove: bool,
     #[arg(long, default_value_t = false)]
     compress: bool,
+    #[arg(long, default_value_t = false)]
+    convert: bool,
 
     // only for --convert legacy output
     #[clap(long)]
@@ -52,7 +54,8 @@ fn load_shard_proofs() -> Result<SP1ProofWithPublicValues> {
         if !shard_path.exists() {
             break; // Stop when proof_{index}.bin is not found
         }
-        let proof = RecursionInput::load(shard_path)?;
+        let is_first_shard = index == 0;
+        let proof = RecursionInput::load(shard_path, is_first_shard, true)?;
         let shard_proof = match proof {
             RecursionInput::Single { vk: _, proof, .. } => proof, // Extract proof, ignore vk
             RecursionInput::Double { .. } => {
@@ -123,7 +126,8 @@ fn main() {
         let prover = SP1Prover::<DefaultProverComponents>::new();
 
         let final_path = Path::new(PREFIX).join("reduced_final.bin");
-        let input = RecursionInput::load(final_path).unwrap();
+        let file = File::open(&final_path).unwrap();
+        let input = bincode::deserialize_from(file).unwrap();
         let common_path = Path::new(PREFIX).join("common_data.bin");
         let mut common_file = File::open(&common_path).unwrap();
         let mut common_serialized = Vec::new();

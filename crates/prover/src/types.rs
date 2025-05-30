@@ -144,12 +144,6 @@ pub enum RecursionInput {
 }
 
 impl RecursionInput {
-    fn split_paths(base: &Path) -> (PathBuf, PathBuf) {
-        let parent = base.parent().unwrap_or_else(|| Path::new(""));
-        let stem = base.file_stem().unwrap_or_default().to_string_lossy();
-        (parent.join(format!("{stem}_vk.bin")), parent.join(format!("{stem}_proof.bin")))
-    }
-
     pub fn save(&self, proof_path: impl AsRef<Path>) -> Result<()> {
         match self {
             RecursionInput::Single { proof, .. } => {
