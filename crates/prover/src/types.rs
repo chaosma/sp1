@@ -1,6 +1,9 @@
-use std::{fs::File, path::Path};
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+};
 
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use clap::ValueEnum;
 use p3_baby_bear::BabyBear;
 use p3_bn254_fr::Bn254Fr;
@@ -141,20 +144,64 @@ pub enum RecursionInput {
 }
 
 impl RecursionInput {
-    pub fn save(&self, path: impl AsRef<Path>) -> Result<()> {
-        bincode::serialize_into(
-            File::create(&path).map_err(|e| anyhow::anyhow!("Failed to open file: {}", e))?,
-            self,
-        )
-        .map_err(|e| anyhow::anyhow!("Failed to serialize: {}", e))?;
+    fn split_paths(base: &Path) -> (PathBuf, PathBuf) {
+        let parent = base.parent().unwrap_or_else(|| Path::new(""));
+        let stem = base.file_stem().unwrap_or_default().to_string_lossy();
+        (parent.join(format!("{stem}_vk.bin")), parent.join(format!("{stem}_proof.bin")))
+    }
+
+    pub fn save(&self, base: impl AsRef<Path>) -> Result<()> {
+        let base = base.as_ref();
+        let (vk_path, proof_path) = Self::split_paths(base);
+
+        match self {
+            RecursionInput::Single { vk, proof, is_first_shard } => {
+                // 1. verifying key  ----------------------------------
+                bincode::serialize_into(
+                    File::create(&vk_path)
+                        .with_context(|| format!("cannot create {}", vk_path.display()))?,
+                    vk,
+                )
+                .context("serialize vk")?;
+
+                // 2. proof (+ flag)  ---------------------------------
+                let pkg = (proof, is_first_shard);
+                bincode::serialize_into(
+                    File::create(&proof_path)
+                        .with_context(|| format!("cannot create {}", proof_path.display()))?,
+                    &pkg,
+                )
+                .context("serialize proof")?;
+            }
+
+            // You never write Double; refuse loudly so bugs surface early.
+            RecursionInput::Double { .. } => {
+                return Err(anyhow!(
+                    "save(): only RecursionInput::Single is supported with split files"
+                ));
+            }
+        }
         Ok(())
     }
 
-    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
-        let file = File::open(&path).map_err(|e| anyhow::anyhow!("Failed to open file: {}", e))?;
-        let input = bincode::deserialize_from(file)
-            .map_err(|e| anyhow::anyhow!("Failed to deserialize: {}", e))?;
-        Ok(input)
+    // ─────────────────────────────── load ───────────────────────────────
+    pub fn load(base: impl AsRef<Path>) -> Result<Self> {
+        let base = base.as_ref();
+        let (vk_path, proof_path) = Self::split_paths(base);
+
+        // 1. read vk ------------------------------------------------------
+        let vk_file =
+            File::open(&vk_path).with_context(|| format!("cannot open {}", vk_path.display()))?;
+        let vk: StarkVerifyingKey<CoreSC> =
+            bincode::deserialize_from(vk_file).context("deserialize vk")?;
+
+        // 2. read proof (+ flag) -----------------------------------------
+        let proof_file = File::open(&proof_path)
+            .with_context(|| format!("cannot open {}", proof_path.display()))?;
+        let (proof, is_first_shard): (ShardProof<CoreSC>, bool) =
+            bincode::deserialize_from(proof_file).context("deserialize proof")?;
+
+        Ok(RecursionInput::Single { vk, proof, is_first_shard })
     }
 }
 
