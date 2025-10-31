@@ -47,7 +47,7 @@ pub fn write_cycles(name: &str, cycles: u64) {
 
     entries.push(BenchEntry { name: name.to_string(), cycles });
 
-    // Re-serialize the file.
+    // Re-inputs the file.
     std::fs::write(file, serde_json::to_string(&entries).unwrap()).unwrap();
 }
 

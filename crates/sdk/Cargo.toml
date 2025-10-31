@@ -62,6 +62,11 @@ alloy-primitives = { version = "1.0", default-features = false, optional = true,
 backoff = { version = "0.4", features = ["tokio"], optional = true }
 sysinfo = "0.30.13"
 
+
+p3-symmetric = { workspace = true }
+p3-matrix = { workspace = true }
+p3-commit = { workspace = true }
+
 # TEE Dependencies
 k256 = { version = "0.13.3", features = ["serde"] } # Signing
 eventsource-stream = { version = "0.2.0" }          # SSE Extenstion for reqwest
@@ -73,7 +78,7 @@ tokio-test = { version = "0.4" }
 [features]
 default = ["network", "reserved-capacity"]
 native-gnark = ["sp1-prover/native-gnark"]
-# TODO: Once alloy has a 1.* release, we can likely remove this feature flag, as there will be less 
+# TODO: Once alloy has a 1.* release, we can likely remove this feature flag, as there will be less
 # dependency resolution issues.
 network = [
   "dep:prost",

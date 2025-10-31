@@ -217,7 +217,7 @@ fn main() {
         std::fs::write(
             &output,
             serde_json::to_string_pretty(&all_maximal_shapes)
-                .expect("failed to serialize maximal shapes"),
+                .expect("failed to inputs maximal shapes"),
         )
         .unwrap();
     }

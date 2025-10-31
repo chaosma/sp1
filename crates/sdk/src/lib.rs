@@ -33,6 +33,7 @@ pub mod install;
 #[cfg(feature = "network")]
 pub mod network;
 pub mod utils;
+pub mod serialize;
 
 // Re-export the client.
 pub use crate::client::ProverClient;

@@ -57,7 +57,7 @@ pub struct CudaProverContainer {
 
 /// The payload for the [sp1_prover::SP1Prover::setup] method.
 ///
-/// This object is used to serialize and deserialize the payloads for the Moongate server.
+/// This object is used to inputs and deserialize the payloads for the Moongate server.
 #[derive(Serialize, Deserialize)]
 pub struct SetupRequestPayload {
     pub elf: Vec<u8>,
@@ -65,7 +65,7 @@ pub struct SetupRequestPayload {
 
 /// The payload for the [sp1_prover::SP1Prover::setup] method response.
 ///
-/// We use this object to serialize and deserialize the payload from the server to the client.
+/// We use this object to inputs and deserialize the payload from the server to the client.
 #[derive(Serialize, Deserialize)]
 pub struct SetupResponsePayload {
     pub pk: SP1ProvingKey,
@@ -74,7 +74,7 @@ pub struct SetupResponsePayload {
 
 /// The payload for the [sp1_prover::SP1Prover::prove_core] method.
 ///
-/// This object is used to serialize and deserialize the payloads for the Moongate server.
+/// This object is used to inputs and deserialize the payloads for the Moongate server.
 #[derive(Serialize, Deserialize)]
 pub struct ProveCoreRequestPayload {
     /// The input stream.
@@ -83,7 +83,7 @@ pub struct ProveCoreRequestPayload {
 
 /// The payload for the [sp1_prover::SP1Prover::stateless_prove_core] method.
 ///
-/// This object is used to serialize and deserialize the payloads for the Moongate server.
+/// This object is used to inputs and deserialize the payloads for the Moongate server.
 /// The proving key is sent in the payload with the request to allow the Moongate server to generate
 /// proofs without re-generating the proving key.
 #[derive(Serialize, Deserialize)]
@@ -96,7 +96,7 @@ pub struct StatelessProveCoreRequestPayload {
 
 /// The payload for the [sp1_prover::SP1Prover::compress] method.
 ///
-/// This object is used to serialize and deserialize the payloads for the Moongate server.
+/// This object is used to inputs and deserialize the payloads for the Moongate server.
 #[derive(Serialize, Deserialize)]
 pub struct CompressRequestPayload {
     /// The verifying key.
@@ -109,7 +109,7 @@ pub struct CompressRequestPayload {
 
 /// The payload for the [sp1_prover::SP1Prover::shrink] method.
 ///
-/// This object is used to serialize and deserialize the payloads for the Moongate server.
+/// This object is used to inputs and deserialize the payloads for the Moongate server.
 #[derive(Serialize, Deserialize)]
 pub struct ShrinkRequestPayload {
     pub reduced_proof: SP1ReduceProof<InnerSC>,
@@ -117,7 +117,7 @@ pub struct ShrinkRequestPayload {
 
 /// The payload for the [sp1_prover::SP1Prover::wrap_bn254] method.
 ///
-/// This object is used to serialize and deserialize the payloads for the Moongate server.
+/// This object is used to inputs and deserialize the payloads for the Moongate server.
 #[derive(Serialize, Deserialize)]
 pub struct WrapRequestPayload {
     pub reduced_proof: SP1ReduceProof<InnerSC>,
@@ -481,7 +481,7 @@ impl Middleware for LoggingMiddleware {
 //         let (pk, vk) = prover.setup(FIBONACCI_ELF);
 //         let payload = ProveCoreRequestPayload { pk, stdin: SP1Stdin::new() };
 //         let request =
-//             crate::proto::api::ProveCoreRequest { data: bincode::serialize(&payload).unwrap() };
+//             crate::proto::api::ProveCoreRequest { data: bincode::inputs(&payload).unwrap() };
 //         let proof = client.prove_core(request).await.unwrap();
 //         let proof: SP1CoreProof = bincode::deserialize(&proof.result).unwrap();
 //         prover.verify(&proof.proof, &vk).unwrap();
@@ -489,7 +489,7 @@ impl Middleware for LoggingMiddleware {
 //         tracing::info!("compress");
 //         let payload = CompressRequestPayload { vk: vk.clone(), proof, deferred_proofs: vec![] };
 //         let request =
-//             crate::proto::api::CompressRequest { data: bincode::serialize(&payload).unwrap() };
+//             crate::proto::api::CompressRequest { data: bincode::inputs(&payload).unwrap() };
 //         let compressed_proof = client.compress(request).await.unwrap();
 //         let compressed_proof: SP1ReduceProof<InnerSC> =
 //             bincode::deserialize(&compressed_proof.result).unwrap();

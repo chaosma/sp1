@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package agent;
+
+// Enum for task types
+enum TaskType {
+  TASK_TYPE_UNSPECIFIED = 0;
+  CORE_SHARD_CHECKPOINT = 1;
+  SPECIAL_CHECKPOINT = 2;
+  RECURSION_CPU = 3;
+  GPU = 4;
+}
+
+// Enum for task status
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  SUCCESS = 1;
+  FAILURE = 2;
+  NOOP = 3;
+}
+
+// Represents a full task unit
+message Task {
+  string stream_key = 1;              // Stream identifier
+  string message_id = 2;              // Message identifier
+  string task_id = 3;                 // Unique identifier for the task
+  repeated string input_paths = 4;    // List of input file paths
+  repeated string output_paths = 5;   // List of output file paths
+}
+
+// Request message for GetCheckpointTaskInputPaths
+message GetCheckpointTaskInputPathsRequest {
+  string root_id = 1;             // Root identifier
+  string block_id = 2;            // Block identifier
+}
+
+// Response message for GetCheckpointTaskInputPaths
+message GetCheckpointTaskInputPathsResponse {
+  repeated string paths = 1;                // Paths for the checkpoint task input (aka block input)
+}
+
+// Request message for CreateCheckpointTasks
+message CreateCheckpointTasksRequest {
+  string root_id = 1;             // Root identifier
+  string block_id = 2;            // Block identifier
+  uint32 num_shards = 3;          // Number of shards to create
+  string program_path = 4;        // Path to the program
+}
+
+// Empty response message for CreateCheckpointTasks
+message CreateCheckpointTasksResponse {
+  // Empty message
+}
+
+// Request message for GetTask
+message GetTaskRequest {
+  TaskType task_type = 1;             // Type of task to retrieve
+}
+
+// Response message for GetTask
+message GetTaskResponse {
+  optional Task task = 1;             // The task details, optional if no task available
+}
+
+// Request message for SubmitTask
+message SubmitTaskRequest {
+  string stream_key = 1;              // Stream identifier
+  string message_id = 2;              // Message identifier
+  string task_id = 3;                 // Task identifier
+  TaskStatus status = 4;              // Task completion status
+  optional string error_message = 5;  // Optional error message if the task failed
+  uint32 total_duration_ms = 6;       // The total milliseconds spent to complete a task
+  string extra_data = 7;              // Extra data in JSON string format
+}
+
+// Empty response message for SubmitTask
+message SubmitTaskResponse {
+  // Empty message
+}
+
+service TaskAgent {
+
+  // Get the input paths for checkpoint task, specifically used by the external service like Reth node
+  rpc GetCheckpointTaskInputPaths (GetCheckpointTaskInputPathsRequest) returns (GetCheckpointTaskInputPathsResponse) {}
+
+  // Create checkpoint tasks, specifically used by the external service like Reth node
+  rpc CreateCheckpointTasks (CreateCheckpointTasksRequest) returns (CreateCheckpointTasksResponse) {}
+
+  // Get a task of specified type
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse) {}
+
+  // Submit a completed task
+  rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse) {}
+}
