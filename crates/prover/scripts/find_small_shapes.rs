@@ -56,6 +56,6 @@ fn main() {
 
     // Serialize the small shapes.
     let serialized =
-        serde_json::to_string(&small_shapes).expect("failed to inputs small shapes");
+        serde_json::to_string(&small_shapes).expect("failed to serialize small shapes");
     std::fs::write(&args.output, serialized).expect("failed to write small shapes");
 }

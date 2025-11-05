@@ -10,7 +10,7 @@ pub enum ProfilerError {
     Io(#[from] std::io::Error),
     #[error("Failed to parse ELF file {}", .0)]
     Elf(#[from] goblin::error::Error),
-    #[error("Failed to inputs samples {}", .0)]
+    #[error("Failed to serialize samples {}", .0)]
     Serde(#[from] serde_json::Error),
 }
 
