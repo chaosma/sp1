@@ -7528,6 +7528,7 @@ dependencies = [
  "sp1-cuda",
  "sp1-primitives 5.2.1",
  "sp1-prover",
+ "sp1-recursion-circuit",
  "sp1-stark",
  "strum",
  "strum_macros",

@@ -15,7 +15,7 @@ use p3_matrix::dense::RowMajorMatrix;
 #[cfg(feature = "mmap")]
 use sp1_prover::InnerSC;
 
-use sp1_sdk::provers::serialize_primitives::SerializeProof;
+use sp1_sdk::serialize::primitives::SerializeProof;
 #[cfg(feature = "mmap")]
 use sp1_stark::Val;
 use std::io::BufWriter;
