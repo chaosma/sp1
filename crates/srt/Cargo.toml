@@ -3,6 +3,17 @@ name = "srt"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+mmap = [
+    "dep:mmap_buffer_rs",
+    "dep:memmap2",
+    "dep:p3-matrix",
+    "dep:sp1-stark",
+    "dep:sp1-prover",
+    "dep:p3-field",
+]
+
 [dependencies]
 tokio = { version = "1.43", default-features = false, features = ["full"] }
 tokio-retry = "0.3"
@@ -28,4 +39,4 @@ p3-field = { workspace = true, optional = true }
 tempfile = "3.19.1"
 
 [build-dependencies]
-tonic-build = "0.13.0"
+tonic-build = "0.12"
