@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 
-use super::serialize_primitives::SerializeProof;
+use super::primitives::SerializeProof;
 use sp1_prover::{SP1CircuitWitness, SP1CoreProofData, SP1ProofWithMetadata};
 
 const FILE: &[u8] = include_bytes!("fib_1000.bin");
