@@ -16,6 +16,9 @@ pub trait MachineRecord: Default + Sized + Send + Sync + Clone {
     /// Registers the nonces of the record.
     fn register_nonces(&mut self, _opts: &Self::Config) {}
 
+    /// Registers the nonces of the record.
+    fn register_nonces_no_opt(&mut self) {}
+
     /// Returns the public values of the record.
     fn public_values<F: AbstractField>(&self) -> Vec<F>;
 }

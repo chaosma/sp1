@@ -482,6 +482,66 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             })
         })
     }
+    pub fn recursion_trace_generation(
+        &self,
+        input: &RecursionInput,
+        is_complete: bool,
+    ) -> RecursionOutput {
+        let mut witness_stream = Vec::new();
+        let (witness_stream, program) = match input {
+            RecursionInput::Single { vk, proof, is_first_shard } => {
+                let input = self.prepare_first_layer_input(&vk, &proof, *is_first_shard);
+                let mut witness_stream = Vec::new();
+                Witnessable::<InnerConfig>::write(&input, &mut witness_stream);
+                let program = self.recursion_program(&input);
+                (witness_stream, program)
+            }
+            RecursionInput::Double { vks_and_proofs } => {
+                let input = SP1CompressWitnessValues {
+                    vks_and_proofs: vks_and_proofs.to_vec(),
+                    is_complete,
+                };
+                let input_with_merkle = self.make_merkle_proofs(input);
+                Witnessable::<InnerConfig>::write(&input_with_merkle, &mut witness_stream);
+                let program = self.compress_program(&input_with_merkle);
+                (witness_stream, program)
+            }
+        };
+
+        let mut runtime = RecursionRuntime::<Val<InnerSC>, Challenge<InnerSC>, _>::new(
+            program.clone(),
+            self.compress_prover.config().perm.clone(),
+        );
+        runtime.witness_stream = witness_stream.into();
+        runtime.run().map_err(|e| SP1RecursionProverError::RuntimeError(e.to_string())).unwrap();
+        let record = runtime.record;
+
+        // Extract public values before moving record
+        let public_values =
+            record.public_values.into_iter().map(|f| f.as_canonical_u32()).collect();
+
+        let mut records = vec![record];
+        self.compress_prover.machine().generate_dependencies_no_opt(&mut records, None);
+        let traces = self.compress_prover.generate_traces(&records[0]);
+
+        let (pk, vk) = self.compress_prover.machine().setup(&program);
+
+        // Sort chip names by their ordering values to create preprocessed_trace_names (largest first)
+        let mut chip_ordering_vec: Vec<(String, usize)> = pk.chip_ordering.into_iter().collect();
+
+        chip_ordering_vec.sort_by_key(|&(_, v)| v);
+
+        let preprocessed_trace_names: Vec<String> =
+            chip_ordering_vec.into_iter().map(|(name, _)| name).collect();
+
+        RecursionOutput {
+            preprocessed_traces: pk.traces,
+            traces,
+            preprocessed_trace_names,
+            vk,
+            public_values,
+        }
+    }
 
     /// Reduce shards proofs to a single shard proof using the recursion prover.
     #[instrument(name = "compress", level = "info", skip_all)]
@@ -1306,6 +1366,23 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             [Val::<CoreSC>::zero(); DIGEST_SIZE],
             batch_size,
         )
+    }
+
+    pub fn prepare_first_layer_input<'a>(
+        &'a self,
+        vk: &StarkVerifyingKey<CoreSC>,
+        shard_proof: &ShardProof<CoreSC>,
+        is_first_shard: bool,
+    ) -> SP1RecursionWitnessValues<CoreSC> {
+        SP1RecursionWitnessValues {
+            vk: vk.clone(),
+            shard_proofs: vec![shard_proof.clone()],
+            is_complete: false,
+            is_first_shard,
+            vk_root: self.recursion_vk_root,
+            // assume no deferred_proofs for simplicity
+            reconstruct_deferred_digest: [BabyBear::from_canonical_u32(0); 8],
+        }
     }
 
     /// Generate the inputs for the first layer of recursive proofs.

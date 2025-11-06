@@ -466,6 +466,37 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>> + Air<SymbolicAirBuilder<Val
     }
 
     /// Generates the dependencies of the given records.
+    /// no opt
+    pub fn generate_dependencies_no_opt(
+        &self,
+        records: &mut [A::Record],
+        chips_filter: Option<&[String]>,
+    ) {
+        let chips = self
+            .chips
+            .iter()
+            .filter(|chip| {
+                if let Some(chips_filter) = chips_filter {
+                    chips_filter.contains(&chip.name())
+                } else {
+                    true
+                }
+            })
+            .collect::<Vec<_>>();
+
+        records.iter_mut().for_each(|record| {
+            chips.iter().for_each(|chip| {
+                tracing::debug_span!("chip dependencies", chip = chip.name()).in_scope(|| {
+                    let mut output = A::Record::default();
+                    chip.generate_dependencies(record, &mut output);
+                    record.append(&mut output);
+                });
+            });
+            tracing::debug_span!("register nonces").in_scope(|| record.register_nonces_no_opt());
+        });
+    }
+
+    /// Generates the dependencies of the given records.
     #[allow(clippy::needless_for_each)]
     pub fn generate_dependencies(
         &self,

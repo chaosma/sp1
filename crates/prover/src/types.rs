@@ -6,6 +6,7 @@ use p3_baby_bear::BabyBear;
 use p3_bn254_fr::Bn254Fr;
 use p3_commit::{Pcs, TwoAdicMultiplicativeCoset};
 use p3_field::{AbstractField, PrimeField, PrimeField32, TwoAdicField};
+use p3_matrix::dense::RowMajorMatrix;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp1_core_machine::{io::SP1Stdin, reduce::SP1ReduceProof};
 use sp1_primitives::{io::SP1PublicValues, poseidon2_hash};
@@ -16,13 +17,32 @@ use sp1_recursion_circuit::machine::{
 
 use sp1_recursion_gnark_ffi::proof::{Groth16Bn254Proof, PlonkBn254Proof};
 
-use sp1_stark::{ShardProof, StarkGenericConfig, StarkProvingKey, StarkVerifyingKey, DIGEST_SIZE};
+use sp1_stark::{ShardProof, StarkGenericConfig, StarkProvingKey, StarkVerifyingKey, Val, DIGEST_SIZE};
 use thiserror::Error;
 
 use crate::{
     utils::{babybears_to_bn254, words_to_bytes_be},
     CoreSC, InnerSC,
 };
+
+/// Input for recursion prover
+#[derive(Serialize, Deserialize, Clone)]
+pub enum RecursionInput {
+    // first layer input from core or output of recursion prover
+    Single { vk: StarkVerifyingKey<CoreSC>, proof: ShardProof<CoreSC>, is_first_shard: bool },
+    // intermediate layer input of recursion prover
+    Double { vks_and_proofs: [(StarkVerifyingKey<InnerSC>, ShardProof<InnerSC>); 2] },
+}
+
+/// Output for recursion prover
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RecursionOutput {
+    pub preprocessed_traces: Vec<RowMajorMatrix<Val<InnerSC>>>,
+    pub traces: Vec<(String, RowMajorMatrix<Val<InnerSC>>)>,
+    pub preprocessed_trace_names: Vec<String>,
+    pub vk: StarkVerifyingKey<InnerSC>,
+    pub public_values: Vec<u32>,
+}
 
 /// The information necessary to generate a proof for a given RISC-V program.
 #[derive(Clone, Serialize, Deserialize)]
