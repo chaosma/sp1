@@ -193,9 +193,9 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
                                 let mem_events_height = shape[2].1;
                                 let global_events_height = shape[3].1;
                                 if num_memory_local_events
-                                    .div_ceil(NUM_LOCAL_MEMORY_ENTRIES_PER_ROW) <=
-                                    (1 << mem_events_height) &&
-                                    num_global_events <= (1 << global_events_height)
+                                    .div_ceil(NUM_LOCAL_MEMORY_ENTRIES_PER_ROW)
+                                    <= (1 << mem_events_height)
+                                    && num_global_events <= (1 << global_events_height)
                                 {
                                     let mut actual_shape: Shape<RiscvAirId> = Shape::default();
                                     actual_shape.extend(
@@ -275,8 +275,8 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
                     ),
                     (
                         RiscvAir::<F>::Global(GlobalChip).name(),
-                        ((2 * num_local_mem_events +
-                            (1 << allowed_log2_height).div_ceil(&air_id.rows_per_event()))
+                        ((2 * num_local_mem_events
+                            + (1 << allowed_log2_height).div_ceil(&air_id.rows_per_event()))
                         .next_power_of_two()
                         .ilog2() as usize)
                             .max(4),
@@ -454,15 +454,78 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
 impl<F: PrimeField32> Default for CoreShapeConfig<F> {
     fn default() -> Self {
         // Load the maximal shapes.
-        let maximal_shapes: BTreeMap<usize, Vec<Shape<RiscvAirId>>> =
+        let mut maximal_shapes: BTreeMap<usize, Vec<Shape<RiscvAirId>>> =
             serde_json::from_slice(MAXIMAL_SHAPES).unwrap();
         let small_shapes: Vec<Shape<RiscvAirId>> = serde_json::from_slice(SMALL_SHAPES).unwrap();
 
         // Set the allowed preprocessed log2 heights.
         let allowed_preprocessed_log2_heights = HashMap::from([
-            (RiscvAirId::Program, vec![Some(19), Some(20), Some(21), Some(22)]),
+            (RiscvAirId::Program, vec![Some(19), Some(20), Some(21), Some(22), Some(23)]),
             (RiscvAirId::Byte, vec![Some(16)]),
         ]);
+
+        // Add your 14 PackedCore shape clusters
+        let custom_small_clusters: Vec<ShapeCluster<RiscvAirId>> = vec![
+            ShapeCluster::new(HashMap::from([
+                (RiscvAirId::Cpu, vec![Some(22)]),
+                (RiscvAirId::AddSub, vec![Some(22)]),
+                (RiscvAirId::Lt, vec![Some(20), Some(21)]),
+                (RiscvAirId::Bitwise, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::ShiftRight, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::ShiftLeft, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::SyscallCore, vec![Some(16), Some(17)]),
+                (RiscvAirId::MemoryLocal, vec![Some(16), Some(17)]),
+                (RiscvAirId::Mul, vec![Some(19), Some(20), Some(21)]),
+                (RiscvAirId::DivRem, vec![Some(10), Some(16)]),
+            ])),
+            ShapeCluster::new(HashMap::from([
+                (RiscvAirId::Cpu, vec![Some(23)]),
+                (RiscvAirId::AddSub, vec![Some(22), Some(23)]),
+                (RiscvAirId::Lt, vec![Some(20), Some(21), Some(22)]),
+                (RiscvAirId::Bitwise, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::ShiftRight, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::ShiftLeft, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::SyscallCore, vec![Some(16), Some(17)]),
+                (RiscvAirId::MemoryLocal, vec![Some(16), Some(17)]),
+                (RiscvAirId::Mul, vec![Some(19), Some(20), Some(21)]),
+                (RiscvAirId::DivRem, vec![Some(10), Some(16)]),
+            ])),
+            ShapeCluster::new(HashMap::from([
+                (RiscvAirId::Cpu, vec![Some(22)]),
+                (RiscvAirId::AddSub, vec![Some(22)]),
+                (RiscvAirId::Lt, vec![Some(20), Some(21)]),
+                (RiscvAirId::Bitwise, vec![Some(17), Some(18), Some(19), Some(20)]),
+                (RiscvAirId::ShiftRight, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::ShiftLeft, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::SyscallCore, vec![Some(16), Some(17)]),
+                (RiscvAirId::MemoryLocal, vec![Some(16), Some(17), Some(21)]),
+                (RiscvAirId::Mul, vec![Some(19), Some(20), Some(21)]),
+                (RiscvAirId::DivRem, vec![Some(10), Some(16)]),
+            ])),
+            ShapeCluster::new(HashMap::from([
+                (RiscvAirId::Cpu, vec![Some(23)]),
+                (RiscvAirId::AddSub, vec![Some(22), Some(23)]),
+                (RiscvAirId::Lt, vec![Some(20), Some(21), Some(22)]),
+                (RiscvAirId::Bitwise, vec![Some(17), Some(18), Some(19), Some(20)]),
+                (RiscvAirId::ShiftRight, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::ShiftLeft, vec![Some(17), Some(18), Some(19)]),
+                (RiscvAirId::SyscallCore, vec![Some(16), Some(17)]),
+                (RiscvAirId::MemoryLocal, vec![Some(16), Some(17), Some(20), Some(21)]),
+                (RiscvAirId::Mul, vec![Some(19), Some(20), Some(21)]),
+                (RiscvAirId::DivRem, vec![Some(10), Some(16)]),
+            ])),
+        ];
+
+        // Convert JSON shapes to clusters
+        let json_small_clusters: Vec<ShapeCluster<RiscvAirId>> = small_shapes
+            .into_iter()
+            .map(|shape| {
+                ShapeCluster::new(shape.into_iter().map(|(k, v)| (k, vec![Some(v)])).collect())
+            })
+            .collect();
+
+        let all_small_clusters =
+            json_small_clusters.into_iter().chain(custom_small_clusters).collect();
 
         // Generate the clusters from the maximal shapes and register them indexed by log2 shard
         //  size.
@@ -489,18 +552,103 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
             core_allowed_log2_heights.insert(log2_shard_size, clusters);
         }
 
+        // ADD 2^22 MAXIMAL SHAPES
+        let clusters_22 = core_allowed_log2_heights.entry(22).or_insert_with(Vec::new);
+        clusters_22.push(ShapeCluster::new(HashMap::from([
+            (RiscvAirId::Cpu, vec![Some(22)]),
+            (RiscvAirId::AddSub, vec![Some(22)]),
+            (RiscvAirId::Bitwise, vec![Some(19)]),
+            (RiscvAirId::Mul, vec![Some(19)]),
+            (RiscvAirId::ShiftRight, vec![Some(19)]),
+            (RiscvAirId::ShiftLeft, vec![Some(19)]),
+            (RiscvAirId::Lt, vec![Some(21)]),
+            (RiscvAirId::MemoryLocal, vec![Some(19)]),
+            (RiscvAirId::SyscallCore, vec![Some(19)]),
+            (RiscvAirId::DivRem, vec![Some(21)]),
+            (RiscvAirId::MemoryGlobalInit, vec![Some(20)]),
+            (RiscvAirId::MemoryGlobalFinalize, vec![Some(20)]),
+        ])));
+        clusters_22.push(ShapeCluster::new(HashMap::from([
+            (RiscvAirId::Cpu, vec![Some(22)]),
+            (RiscvAirId::AddSub, vec![Some(22)]),
+            (RiscvAirId::Bitwise, vec![Some(19), Some(20)]),
+            (RiscvAirId::Mul, vec![Some(19)]),
+            (RiscvAirId::ShiftRight, vec![Some(19)]),
+            (RiscvAirId::ShiftLeft, vec![Some(19)]),
+            (RiscvAirId::Lt, vec![Some(21)]),
+            (RiscvAirId::MemoryLocal, vec![Some(19), Some(21)]),
+            (RiscvAirId::SyscallCore, vec![Some(19)]),
+            (RiscvAirId::DivRem, vec![Some(21)]),
+            (RiscvAirId::MemoryGlobalInit, vec![Some(20)]),
+            (RiscvAirId::MemoryGlobalFinalize, vec![Some(20)]),
+        ])));
+
+        // Add 2^23 maximal shapes
+        let clusters_23 = core_allowed_log2_heights.entry(23).or_insert_with(Vec::new);
+        clusters_23.push(ShapeCluster::new(HashMap::from([
+            (RiscvAirId::Cpu, vec![Some(23)]),
+            (RiscvAirId::AddSub, vec![Some(22), Some(23)]),
+            (RiscvAirId::Bitwise, vec![Some(19)]),
+            (RiscvAirId::Mul, vec![Some(19)]),
+            (RiscvAirId::ShiftRight, vec![Some(19)]),
+            (RiscvAirId::ShiftLeft, vec![Some(19)]),
+            (RiscvAirId::Lt, vec![Some(21), Some(22)]),
+            (RiscvAirId::MemoryLocal, vec![Some(20), Some(21)]),
+            (RiscvAirId::SyscallCore, vec![Some(19)]),
+            (RiscvAirId::DivRem, vec![Some(21)]),
+            (RiscvAirId::MemoryGlobalInit, vec![Some(21), Some(22), Some(23)]),
+            (RiscvAirId::MemoryGlobalFinalize, vec![Some(21), Some(22), Some(23)]),
+        ])));
+        clusters_23.push(ShapeCluster::new(HashMap::from([
+            (RiscvAirId::Cpu, vec![Some(23)]),
+            (RiscvAirId::AddSub, vec![Some(22), Some(23)]),
+            (RiscvAirId::Bitwise, vec![Some(19), Some(20)]),
+            (RiscvAirId::Mul, vec![Some(19)]),
+            (RiscvAirId::ShiftRight, vec![Some(19)]),
+            (RiscvAirId::ShiftLeft, vec![Some(19)]),
+            (RiscvAirId::Lt, vec![Some(21), Some(22)]),
+            (RiscvAirId::MemoryLocal, vec![Some(20), Some(21)]),
+            (RiscvAirId::SyscallCore, vec![Some(19)]),
+            (RiscvAirId::DivRem, vec![Some(21)]),
+            (RiscvAirId::MemoryGlobalInit, vec![Some(21), Some(22), Some(23)]),
+            (RiscvAirId::MemoryGlobalFinalize, vec![Some(21), Some(22), Some(23)]),
+        ])));
+
         // Set the memory init and finalize heights.
         let memory_allowed_log2_heights = HashMap::from(
             [
                 (
                     RiscvAirId::MemoryGlobalInit,
-                    vec![None, Some(10), Some(16), Some(18), Some(19), Some(20), Some(21)],
+                    vec![
+                        None,
+                        Some(10),
+                        Some(16),
+                        Some(18),
+                        Some(19),
+                        Some(20),
+                        Some(21),
+                        Some(22),
+                        Some(23),
+                    ],
                 ),
                 (
                     RiscvAirId::MemoryGlobalFinalize,
-                    vec![None, Some(10), Some(16), Some(18), Some(19), Some(20), Some(21)],
+                    vec![
+                        None,
+                        Some(10),
+                        Some(16),
+                        Some(18),
+                        Some(19),
+                        Some(20),
+                        Some(21),
+                        Some(22),
+                        Some(23),
+                    ],
                 ),
-                (RiscvAirId::Global, vec![None, Some(11), Some(17), Some(19), Some(21), Some(22)]),
+                (
+                    RiscvAirId::Global,
+                    vec![None, Some(11), Some(17), Some(19), Some(21), Some(22), Some(23)],
+                ),
             ]
             .map(|(air, log_heights)| (air, log_heights)),
         );
@@ -519,12 +667,7 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
             partial_core_shapes: core_allowed_log2_heights,
             partial_memory_shapes: ShapeCluster::new(memory_allowed_log2_heights),
             partial_precompile_shapes: precompile_allowed_log2_heights,
-            partial_small_shapes: small_shapes
-                .into_iter()
-                .map(|x| {
-                    ShapeCluster::new(x.into_iter().map(|(k, v)| (k, vec![Some(v)])).collect())
-                })
-                .collect(),
+            partial_small_shapes: all_small_clusters,
             costs: serde_json::from_str(include_str!("rv32im_costs.json"))
                 .expect("Failed to load rv32im_costs.json file. Verify that `git config core.symlinks` is not set to false."),
             _data: PhantomData,
