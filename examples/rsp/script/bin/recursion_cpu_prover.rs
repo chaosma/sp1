@@ -5,10 +5,9 @@ use memmap2::MmapMut;
 use mmap_buffer_rs::{mmap_buffer_destroy, mmap_buffer_prefault_end};
 use sp1_prover::{
     components::CpuProverComponents, CoreSC, InnerSC, RecursionInput, RecursionOutput,
-    SP1Prover,
+    SP1Prover, recursion_trace_generation_first_layer, recursion_trace_generation_two_to_one,
 };
 use sp1_sdk::{
-    action::{recursion_trace_generation_first_layer, recursion_trace_generation_two_to_one},
     utils,
 };
 use sp1_stark::{ShardProof, StarkVerifyingKey};

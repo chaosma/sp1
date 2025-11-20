@@ -101,7 +101,7 @@ fn run() -> Result<()> {
     let input = RecursionInput::Single { vk: final_vk, proof: final_proof, is_first_shard: false };
 
     // Verify the proof
-    SP1Prover::<DefaultProverComponents>::new()
+    SP1Prover::<CpuProverComponents>::new()
         .verify_final_compressed(guest_program_vk, input, public_values)
         .map_err(|e| anyhow::anyhow!("Proof verification failed: {}", e))?;
 

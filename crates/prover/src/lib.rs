@@ -19,6 +19,7 @@ pub mod types;
 pub mod utils;
 pub mod verify;
 
+use anyhow::anyhow;
 use std::{
     borrow::Borrow,
     collections::BTreeMap,
@@ -482,21 +483,6 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
             })
         })
     }
-
-    // generate first layer recursion proof
-    // pub fn recursion_trace_generation_first_layer(
-    //     prover: &SP1Prover<CpuProverComponents>,
-    //     input: RecursionInput,
-    // ) -> Result<RecursionOutput> {
-    //     let recursion_input = match input {
-    //         RecursionInput::Single { .. } => input,
-    //         RecursionInput::Double { .. } => {
-    //             return Err(anyhow!("Expected Single RecursionInput"));
-    //         }
-    //     };
-
-    //     Ok(prover.recursion_trace_generation(&recursion_input, false))
-    // }
 
     pub fn recursion_trace_generation(
         &self,
@@ -1535,6 +1521,49 @@ pub fn compress_program_from_input<C: SP1ProverComponents>(
     compiler_span.exit();
 
     program
+}
+
+// generate first layer recursion proof
+pub fn recursion_trace_generation_first_layer(
+    prover: &SP1Prover<CpuProverComponents>,
+    input: RecursionInput,
+) -> anyhow::Result<RecursionOutput> {
+    let recursion_input = match input {
+        RecursionInput::Single { .. } => input,
+        RecursionInput::Double { .. } => {
+            return Err(anyhow!("Expected Single RecursionInput"));
+        }
+    };
+
+    Ok(prover.recursion_trace_generation(&recursion_input, false))
+}
+
+// combine two recursion proofs into one
+pub fn recursion_trace_generation_two_to_one(
+    prover: &SP1Prover<CpuProverComponents>,
+    input1: RecursionInput,
+    input2: RecursionInput,
+    is_complete: bool,
+) -> anyhow::Result<RecursionOutput> {
+    // Ensure both inputs are Single (containing InnerSC proofs)
+    let (vk1, proof1) = match input1 {
+        RecursionInput::Single { vk, proof, .. } => (vk, proof),
+        RecursionInput::Double { .. } => {
+            return Err(anyhow!("Expected Single RecursionInput from input1"));
+        }
+    };
+    let (vk2, proof2) = match input2 {
+        RecursionInput::Single { vk, proof, .. } => (vk, proof),
+        RecursionInput::Double { .. } => {
+            return Err(anyhow!("Expected Single RecursionInput from input2"));
+        }
+    };
+
+    // Construct RecursionInput::Double
+    let recursion_input = RecursionInput::Double { vks_and_proofs: [(vk1, proof1), (vk2, proof2)] };
+
+    // Compress the two proofs into one
+    Ok(prover.recursion_trace_generation(&recursion_input, is_complete))
 }
 
 #[cfg(test)]
