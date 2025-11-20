@@ -112,7 +112,7 @@ async fn main() -> Result<()> {
                 anyhow!("Failed to connect to task agent at {}: {:?}", task_agent_ip_address, e)
             })?;
 
-    let prover = SP1Prover::<DefaultProverComponents>::new();
+    let prover = SP1Prover::<CpuProverComponents>::new();
 
     loop {
         let get_task_request =
