@@ -11,8 +11,8 @@ pub const TASK_FIELD_KEY: &str = "task";
 pub const SRT_GROUP_NAME: &str = "srt";
 pub const DEFAULT_STREAM_BLOCK_MS: u64 = 3000;
 
-/// Default TTL for Redis keys (6 hours)
-pub const DEFAULT_REDIS_TTL: Duration = Duration::from_secs(6 * 60 * 60);
+/// Default TTL for Redis keys (12 hours)
+pub const DEFAULT_REDIS_TTL: Duration = Duration::from_secs(12 * 60 * 60);
 pub const DEFAULT_REDIS_HOST: &str = "localhost";
 pub const DEFAULT_REDIS_PORT: u16 = 6379;
 

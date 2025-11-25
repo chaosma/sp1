@@ -90,10 +90,10 @@ impl WithInputBlob for ShardTask {
     fn get_input_paths(&self) -> Vec<PathBuf> {
         // Different types of shard tasks have different input paths.
         // For core shard tasks, the input path is the shard itself.
-        // For global memory tasks, it takes 4 input files. The input paths are the {shard itself}-0, {shard itself}-1,
-        // the shard ends, and the instruction count.
-        // For precompile tasks, it takes 3 input files. The input paths are the shard itself, the shard ends, and
-        // the instruction count.
+        // For global memory tasks, it takes 6 input files. The input paths are the {shard itself}-0, {shard itself}-1,
+        // the shard ends, the instruction count, the commited values, and the gmem addrs.
+        // For precompile tasks, it takes 4 input files. The input paths are the shard itself, the shard ends,
+        // the instruction count, and the commited values.
         let local_ramdisk_dir = format!("{}/{}/shard", LOCAL_RAMDISK_PATH, self.root_id);
         let local_huge_tlb_dir = format!("{}/{}/shard", LOCAL_HUGE_TLB_PATH, self.root_id);
         match self.task_type {
@@ -101,15 +101,18 @@ impl WithInputBlob for ShardTask {
                 vec![PathBuf::from(format!("{}/{}", local_huge_tlb_dir, self.shard_id))]
             }
             ShardTaskType::GlobalMemory => vec![
-                PathBuf::from(format!("{}/{}-0", local_huge_tlb_dir, self.shard_id)),
-                PathBuf::from(format!("{}/{}-1", local_huge_tlb_dir, self.shard_id)),
+                PathBuf::from(format!("{}/{}-0", local_ramdisk_dir, self.shard_id)),
+                PathBuf::from(format!("{}/{}-1", local_ramdisk_dir, self.shard_id)),
                 PathBuf::from(format!("{}/shard_ends", local_ramdisk_dir)),
                 PathBuf::from(format!("{}/instr_count", local_ramdisk_dir)),
+                PathBuf::from(format!("{}/commited_values", local_ramdisk_dir)),
+                PathBuf::from(format!("{}/gmem_addrs", local_ramdisk_dir)),
             ],
             ShardTaskType::Precompile => vec![
-                PathBuf::from(format!("{}/{}", local_huge_tlb_dir, self.shard_id)),
+                PathBuf::from(format!("{}/{}", local_ramdisk_dir, self.shard_id)),
                 PathBuf::from(format!("{}/shard_ends", local_ramdisk_dir)),
                 PathBuf::from(format!("{}/instr_count", local_ramdisk_dir)),
+                PathBuf::from(format!("{}/commited_values", local_ramdisk_dir)),
             ],
         }
     }
@@ -129,10 +132,17 @@ pub struct ComposeTask {
 
 impl WithInputBlob for ComposeTask {
     fn get_input_paths(&self) -> Vec<PathBuf> {
-        vec![PathBuf::from(format!(
-            "{}/{}/compose/{}-{}",
-            SHARED_RAMDISK_PATH, self.root_id, self.height, self.index
-        ))]
+        // 2 input files:
+        // i = 0: recursion proof;
+        // i = 1: recursion vk;
+        (0..2)
+            .map(|i| {
+                PathBuf::from(format!(
+                    "{}/{}/compose/{}-{}-{}",
+                    SHARED_RAMDISK_PATH, self.root_id, self.height, self.index, i
+                ))
+            })
+            .collect()
     }
 }
 
@@ -163,7 +173,12 @@ impl WithInputBlob for RecursionCpuTask {
             ]
         } else {
             // 2-1 recursion
-            (0..2)
+            // 4 input files:
+            // i = 0: first recursion proof;
+            // i = 1: first recursion vk;
+            // i = 2: second recursion proof;
+            // i = 3: second recursion vk;
+            (0..4)
                 .map(|i| {
                     PathBuf::from(format!(
                         "{}/{}/recursion_cpu/{}-{}-{}",
@@ -191,10 +206,23 @@ pub struct RecursionGpuTask {
 
 impl WithInputBlob for RecursionGpuTask {
     fn get_input_paths(&self) -> Vec<PathBuf> {
-        vec![PathBuf::from(format!(
-            "{}/{}/recursion_gpu/{}-{}",
-            LOCAL_RAMDISK_PATH, self.root_id, self.height, self.index
-        ))]
+        // 6 input files:
+        // i = 0: preprocessed_trace
+        // i = 1: trace
+        // i = 2: preprocessed trace names
+        // i = 3: trace_names
+        // i = 4: vk
+        // i = 5: public values
+        let local_ramdisk_dir = format!("{}/{}/recursion_gpu", LOCAL_RAMDISK_PATH, self.root_id);
+        let local_huge_tlb_dir = format!("{}/{}/recursion_gpu", LOCAL_HUGE_TLB_PATH, self.root_id);
+        vec![
+            PathBuf::from(format!("{}/{}-{}-0", local_huge_tlb_dir, self.height, self.index)),
+            PathBuf::from(format!("{}/{}-{}-1", local_huge_tlb_dir, self.height, self.index)),
+            PathBuf::from(format!("{}/{}-{}-2", local_ramdisk_dir, self.height, self.index)),
+            PathBuf::from(format!("{}/{}-{}-3", local_ramdisk_dir, self.height, self.index)),
+            PathBuf::from(format!("{}/{}-{}-4", local_ramdisk_dir, self.height, self.index)),
+            PathBuf::from(format!("{}/{}-{}-5", local_ramdisk_dir, self.height, self.index)),
+        ]
     }
 }
 
