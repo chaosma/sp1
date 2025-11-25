@@ -6,7 +6,7 @@ use tracing::info;
 
 
 use sp1_sdk::{utils, ProverClient};
-use sp1_sdk::provers::serialize_primitives::SerializeProof;
+use sp1_sdk::serialize::primitives::SerializeProof;
 
 #[tokio::main]
 async fn main() -> Result<()> {
