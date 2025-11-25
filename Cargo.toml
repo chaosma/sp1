@@ -98,28 +98,6 @@ p3-blake3 = { version = "=0.2.3-succinct" }
 p3-mds = { version = "=0.2.3-succinct" }
 p3-maybe-rayon = { version = "=0.2.3-succinct" }
 
-# snarkify p3
-# p3-air = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-air" }
-# p3-field = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-field" }
-# p3-commit = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-commit" }
-# p3-matrix = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-matrix" }
-# p3-baby-bear = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-baby-bear" }
-# p3-util = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-util" }
-# p3-challenger = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-challenger" }
-# p3-dft = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-dft" }
-# p3-fri = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-fri" }
-# p3-goldilocks = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-goldilocks" }
-# p3-keccak = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-keccak" }
-# p3-keccak-air = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-keccak-air" }
-# p3-blake3 = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-blake3" }
-# p3-mds = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-mds" }
-# p3-merkle-tree = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-merkle-tree" }
-# p3-poseidon2 = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-poseidon2" }
-# p3-symmetric = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-symmetric" }
-# p3-uni-stark = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-uni-stark" }
-# p3-maybe-rayon = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-maybe-rayon" }
-# p3-bn254-fr = { git = "https://github.com/snarkify/Plonky3.git", package = "p3-bn254-fr" }
-
 # misc
 hashbrown = "0.14.5"
 itertools = "0.13.0"

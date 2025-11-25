@@ -10,7 +10,7 @@ anyhow = "1.0"
 clap = { version = "4.5.7", features = ["derive", "env"] }
 tokio = { version = "1.43", default-features = false, features = ["full"] }
 srt = { workspace = true }
-mmap_buffer_rs = { path = "../../../../sp1-monorepo/cu-sp1/third-party/mmap_buffer/mmap_buffer_rs", optional = true }
+mmap_buffer_rs = { path = "../../../third-party/mmap_buffer/mmap_buffer_rs", optional = true }
 memmap2 = { version = "0.9", optional = true }
 tracing = { workspace = true }
 tonic = "0.12"
@@ -40,6 +40,6 @@ path = "bin/recursion_cpu_prover.rs"
 name = "verifier"
 path = "bin/verifier.rs"
 
-# [[bin]]
-# name = "vk_generator"
-# path = "bin/vk_generator.rs"
+[[bin]]
+name = "vk_generator"
+path = "bin/vk_generator.rs"

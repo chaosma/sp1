@@ -459,9 +459,9 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
         let maximal_shapes: BTreeMap<usize, Vec<Shape<RiscvAirId>>> = {
             let mut shapes: BTreeMap<usize, Vec<Shape<RiscvAirId>>> =
                 serde_json::from_slice(MAXIMAL_SHAPES).unwrap();
-            let snarkify_shapes: BTreeMap<usize, Vec<Shape<RiscvAirId>>> =
-                serde_json::from_slice(SNARKIFY_SHAPES).unwrap();
-            shapes.extend(snarkify_shapes);
+            //let snarkify_shapes: BTreeMap<usize, Vec<Shape<RiscvAirId>>> =
+            //    serde_json::from_slice(SNARKIFY_SHAPES).unwrap();
+            //shapes.extend(snarkify_shapes);
             shapes
         };
         let small_shapes: Vec<Shape<RiscvAirId>> = serde_json::from_slice(SMALL_SHAPES).unwrap();
@@ -471,14 +471,6 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
             (RiscvAirId::Program, vec![Some(19), Some(20), Some(21), Some(22), Some(23)]),
             (RiscvAirId::Byte, vec![Some(16)]),
         ]);
-
-        // Convert small shapes to clusters
-        let small_clusters: Vec<ShapeCluster<RiscvAirId>> = small_shapes
-            .into_iter()
-            .map(|shape| {
-                ShapeCluster::new(shape.into_iter().map(|(k, v)| (k, vec![Some(v)])).collect())
-            })
-            .collect();
 
         // Generate the clusters from the maximal shapes and register them indexed by log2 shard
         //  size.
@@ -504,7 +496,7 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
 
             core_allowed_log2_heights.insert(log2_shard_size, clusters);
         }
-
+        /*
         // ADD 2^22 MAXIMAL SHAPES
         let clusters_22 = core_allowed_log2_heights.entry(22).or_insert_with(Vec::new);
         clusters_22.push(ShapeCluster::new(HashMap::from([
@@ -566,6 +558,7 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
             (RiscvAirId::MemoryGlobalInit, vec![Some(21), Some(22), Some(23)]),
             (RiscvAirId::MemoryGlobalFinalize, vec![Some(21), Some(22), Some(23)]),
         ])));
+         */
 
         // Set the memory init and finalize heights.
         let memory_allowed_log2_heights = HashMap::from(
@@ -620,7 +613,12 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
             partial_core_shapes: core_allowed_log2_heights,
             partial_memory_shapes: ShapeCluster::new(memory_allowed_log2_heights),
             partial_precompile_shapes: precompile_allowed_log2_heights,
-            partial_small_shapes: small_clusters,
+            partial_small_shapes: small_shapes
+            .into_iter()
+            .map(|x| {
+                ShapeCluster::new(x.into_iter().map(|(k, v)| (k, vec![Some(v)])).collect())
+            })
+            .collect(),
             costs: serde_json::from_str(include_str!("rv32im_costs.json"))
                 .expect("Failed to load rv32im_costs.json file. Verify that `git config core.symlinks` is not set to false."),
             _data: PhantomData,

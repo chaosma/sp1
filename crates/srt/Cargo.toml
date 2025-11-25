@@ -28,7 +28,7 @@ prost = "0.13.5"
 bb8-redis = "0.23.0"
 
 sp1-sdk = { path = "../sdk" }
-mmap_buffer_rs = { path = "../../../sp1-monorepo/cu-sp1/third-party/mmap_buffer/mmap_buffer_rs", optional = true }
+mmap_buffer_rs = { path = "../../third-party/mmap_buffer/mmap_buffer_rs", optional = true }
 memmap2 = { version = "0.9", optional = true }
 p3-matrix = { workspace = true, optional = true }
 sp1-stark = { workspace = true, optional = true }

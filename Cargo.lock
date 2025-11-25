@@ -4551,6 +4551,7 @@ dependencies = [
  "libc",
  "memmap2",
  "rayon",
+ "tempfile",
 ]
 
 [[package]]

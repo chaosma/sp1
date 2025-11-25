@@ -1,3 +1,6 @@
 [submodule "contracts/lib/forge-std"]
 	path = contracts/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "third-party/mmap_buffer"]
+	path = third-party/mmap_buffer
+	url = https://github.com/snarkify/mmap_buffer
