@@ -269,8 +269,8 @@ where
                 chips.iter().zip(opened_values.chips.iter()).for_each(|(chip, val)| {
                     max_lookup_mult = max_lookup_mult
                         .checked_add(
-                            (chip.num_sends_by_kind(kind) as u64 +
-                                chip.num_receives_by_kind(kind) as u64)
+                            (chip.num_sends_by_kind(kind) as u64
+                                + chip.num_receives_by_kind(kind) as u64)
                                 .checked_mul(1u64.checked_shl(val.log_degree as u32).unwrap())
                                 .unwrap(),
                         )
@@ -303,6 +303,8 @@ where
         challenger.observe(builder, permutation_commit);
 
         // Observe all cumulative sums, and assert conditions on them.
+        println!("opened_values.chips.len(): {}", opened_values.chips.len());
+        println!("chips.len(): {}", chips.len());
         for (opening, chip) in opened_values.chips.iter().zip_eq(chips.iter()) {
             let local_sum = C::ext2felt(builder, opening.local_cumulative_sum);
             let global_sum = opening.global_cumulative_sum;
