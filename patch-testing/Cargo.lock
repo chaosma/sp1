@@ -5092,6 +5092,7 @@ dependencies = [
  "rand 0.8.5",
  "rayon",
  "serde",
+ "serde_json",
  "sp1-core-executor",
  "sp1-core-machine",
  "sp1-derive",

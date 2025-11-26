@@ -303,8 +303,18 @@ where
         challenger.observe(builder, permutation_commit);
 
         // Observe all cumulative sums, and assert conditions on them.
-        println!("opened_values.chips.len(): {}", opened_values.chips.len());
-        println!("chips.len(): {}", chips.len());
+        // Print opened_values.chips separately
+        eprintln!("=== opened_values.chips ===");
+        for (idx, (_, chip)) in opened_values.chips.iter().zip_eq(chips.iter()).enumerate() {
+            eprintln!("opened_values.chips[{}]: {}", idx, chip.name());
+        }
+
+        // Print chips separately
+        eprintln!("=== chips ===");
+        for (idx, chip) in chips.iter().enumerate() {
+            eprintln!("chips[{}]: {}", idx, chip.name());
+        }
+
         for (opening, chip) in opened_values.chips.iter().zip_eq(chips.iter()) {
             let local_sum = C::ext2felt(builder, opening.local_cumulative_sum);
             let global_sum = opening.global_cumulative_sum;
