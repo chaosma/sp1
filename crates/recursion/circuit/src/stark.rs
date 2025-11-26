@@ -302,14 +302,6 @@ where
 
         challenger.observe(builder, permutation_commit);
 
-        // Observe all cumulative sums, and assert conditions on them.
-        // Print opened_values.chips separately
-        eprintln!("=== opened_values.chips ===");
-        eprintln!("opened_values.chips.len(): {}", opened_values.chips.len());
-        for (idx, _opening) in opened_values.chips.iter().enumerate() {
-            eprintln!("opened_values.chips[{}]: {}", idx, chips[idx].name());
-        }
-
         // Print chips separately
         eprintln!("=== chips ===");
         eprintln!("chips.len(): {}", chips.len());
