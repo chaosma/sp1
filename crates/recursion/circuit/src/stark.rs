@@ -304,15 +304,17 @@ where
 
         // Observe all cumulative sums, and assert conditions on them.
         // Print opened_values.chips separately
-        eprintln!("=== opened_values.chips ===");
+        println!("=== opened_values.chips ===");
+        println!("opened_values.chips.len(): {}", opened_values.chips.len());
         for (idx, (_, chip)) in opened_values.chips.iter().zip_eq(chips.iter()).enumerate() {
-            eprintln!("opened_values.chips[{}]: {}", idx, chip.name());
+            println!("opened_values.chips[{}]: {}", idx, chip.name());
         }
 
         // Print chips separately
-        eprintln!("=== chips ===");
+        println!("=== chips ===");
+        println!("chips.len(): {}", chips.len());
         for (idx, chip) in chips.iter().enumerate() {
-            eprintln!("chips[{}]: {}", idx, chip.name());
+            println!("chips[{}]: {}", idx, chip.name());
         }
 
         for (opening, chip) in opened_values.chips.iter().zip_eq(chips.iter()) {
