@@ -46,7 +46,8 @@ fn main() -> Result<()> {
         }
     }
 
-    let vk = read_serialize_proof::<StarkVerifyingKey<CoreSC>>(&args.guest_program_vk_path)
+    let vk_path = args.guest_program_vk_path.to_string_lossy();
+    let vk = read_serialize_proof::<StarkVerifyingKey<CoreSC>>(&vk_path)
         .with_context(|| {
             format!(
                 "failed to read guest program verification key at {:?}",
@@ -57,7 +58,8 @@ fn main() -> Result<()> {
 
     let mut shard_proofs = Vec::with_capacity(proof_paths.len());
     for path in proof_paths.iter() {
-        let proof = read_serialize_proof::<ShardProof<CoreSC>>(path).with_context(|| {
+        let path_str = path.to_string_lossy();
+        let proof = read_serialize_proof::<ShardProof<CoreSC>>(&path_str).with_context(|| {
             format!("failed to read shard proof at {:?}", path)
         })?;
         shard_proofs.push(proof);
