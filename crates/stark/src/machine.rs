@@ -138,8 +138,15 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> StarkMachine<SC, A> {
     {
         self.chips
             .iter()
-            .filter(|chip| chip_ordering.contains_key(&chip.name()))
-            .sorted_by_key(|chip| chip_ordering.get(&chip.name()))
+            .filter(|chip| {
+                chip_ordering.keys().any(|proof_name| proof_name.eq_ignore_ascii_case(&chip.name()))
+            })
+            .sorted_by_key(|chip| {
+                chip_ordering
+                    .iter()
+                    .find(|(proof_name, _)| proof_name.eq_ignore_ascii_case(&chip.name()))
+                    .map(|(_, index)| *index)
+            })
     }
 
     /// Returns the config of the machine.

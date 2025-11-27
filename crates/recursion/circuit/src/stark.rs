@@ -494,7 +494,7 @@ where
 
 impl<C: CircuitConfig<F = SC::Val>, SC: BabyBearFriConfigVariable<C>> ShardProofVariable<C, SC> {
     pub fn contains_cpu(&self) -> bool {
-        self.chip_ordering.contains_key("Cpu")
+        self.chip_ordering.contains_key("CPU")
     }
 
     pub fn log_degree_cpu(&self) -> usize {

@@ -136,10 +136,17 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> Verifier<SC, A> {
             .chip_information
             .iter()
             .map(|(name, domain, _)| {
-                let i = *chip_ordering.get(name).filter(|&&i| i < chips.len()).ok_or(
-                    VerificationError::PreprocessedChipIdMismatch(name.clone(), String::new()),
-                )?;
-                if name != &chips[i].name() {
+                let i = chip_ordering
+                    .iter()
+                    .find(|(proof_name, _)| proof_name.eq_ignore_ascii_case(name))
+                    .map(|(_, index)| *index)
+                    .filter(|&i| i < chips.len())
+                    .ok_or(VerificationError::PreprocessedChipIdMismatch(
+                        name.clone(),
+                        String::new(),
+                    ))?;
+
+                if !name.eq_ignore_ascii_case(&chips[i].name()) {
                     return Err(VerificationError::PreprocessedChipIdMismatch(
                         name.clone(),
                         chips[i].name(),

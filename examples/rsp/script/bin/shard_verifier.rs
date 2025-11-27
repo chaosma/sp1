@@ -47,23 +47,19 @@ fn main() -> Result<()> {
     }
 
     let vk_path = args.guest_program_vk_path.to_string_lossy();
-    let vk = read_serialize_proof::<StarkVerifyingKey<CoreSC>>(&vk_path)
-        .with_context(|| {
-            format!(
-                "failed to read guest program verification key at {:?}",
-                args.guest_program_vk_path
-            )
-        })?;
+    let vk = read_serialize_proof::<StarkVerifyingKey<CoreSC>>(&vk_path).with_context(|| {
+        format!("failed to read guest program verification key at {:?}", args.guest_program_vk_path)
+    })?;
     let verifying_key = SP1VerifyingKey { vk };
 
     let mut shard_proofs = Vec::with_capacity(proof_paths.len());
     for path in proof_paths.iter() {
         let path_str = path.to_string_lossy();
-        let proof = read_serialize_proof::<ShardProof<CoreSC>>(&path_str).with_context(|| {
-            format!("failed to read shard proof at {:?}", path)
-        })?;
+        let proof = read_serialize_proof::<ShardProof<CoreSC>>(&path_str)
+            .with_context(|| format!("failed to read shard proof at {:?}", path))?;
         shard_proofs.push(proof);
     }
+    println!("shard_proof_0={:?}", shard_proofs[0].chip_ordering);
 
     let prover = SP1Prover::<CpuProverComponents>::new();
     info!("🔍 Verifying shard proofs...");
