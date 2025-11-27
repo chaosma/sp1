@@ -43,3 +43,7 @@ path = "bin/verifier.rs"
 [[bin]]
 name = "vk_generator"
 path = "bin/vk_generator.rs"
+
+[[bin]]
+name = "shard_verifier"
+path = "bin/shard_verifier.rs"
